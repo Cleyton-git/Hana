@@ -1,0 +1,43 @@
+1.Quero fazer com que a Hana julgue oq é bom de salvar na dela, a Hana tem duas memorias uma que é sua personalidade, um txt que tem seu system, e a outra que é sua m
+emoria de contexto, essa segunda deve ser modificada conforme a Hana achar isso, a ideia é configurar um outro agente para classificar se oq o usuario digitou é salvavel
+se sim, passa por um validador no python e salva no banco de dados. FEITO
+
+2. Agente que determina se a memoria ja esta salva. FEITO
+
+3. Vou componentizar a Hana, a ideia é essa: pasta Hana: brain.py (agente que leva até outros agentes) > mouth.py (A Hana
+em si, um agente com a personalidade da Hana que vai responder o usuario). memory.py (Se o agente do brain.py encontar al
+go salvavel ele executa esse agente) Assim é melhor e mais escalavel. FEITO
+
+4. Preciso modificar o system do llm responsavel pelas memorias da Hana.
+	4.1. Tirar as categorias das memorias. FEITO
+	4.2. As vezes ele extrai mto da memoria, como no log "Hana, o Bilu é um excelente cachorro, ele é meio arteiro as vezes mas ele tenta ser comportado, gosto mto dele".
+	Ele transformou em O usuário tem um cachorro chamado Bilu, bom que foi blocado pelo hipocampo, eu amo o hipocampo. FEITO
+
+5. Salvar o resultado do embeding de memorias no bd, isso vai fazer com que eu não tenha que rodar a ia 1 milhão de vezes
+mas sim so 1, para calcular o embeding da nova memoria. FEITO
+
+6. Preciso fazer uma limpa antes de enviar uma possivel memoria pro hipocampo, se o cerebro detectar o 
+input como uma memoria, eu devo fazer algumas coisas. 
+	6.1. Separar em varios frases. Tirar os conectivos (e, virgula e etc). FEITO
+	6.2. Deixar apenas frases com > 15 de len passar. FEITO
+	6.3. No futuro, vou adicionar o embeding nisso e comparar com os embedings do bd, se der um resultado mto baixo vale a tentativa mandar pro bd, se for mto alto
+	descarta, se for algo em torno de 0.70/0.80 envia, pode ser refresh, porém isso é so no futuro e comenta isso no codigo
+
+7. Descobri uma forma de conseguir o contexto da conversa para a Hana, um embeding roda o input e so coloca no contexto as
+memoria da Hana que tem mais de 0.75 de treshhold, se eu conseguir achar uma forma de implementar a importancia das memori
+as tbm, eu vou conseguir um contexto bem proximo do humano. FEITO, soq n coloquei a importancia
+
+8. Pensei em uma melhoria para a ideia 7, inves de mandar o embeding da frase inteira, vamos enviar o embeding do regex delas,
+dessa forma vamos conseguir detectar oq realmente precisa estar no contexto da Hana
+
+8. A gente que determina a action do cerebro da Hana, ele deve retornar um Json com oq ele vai fazer. Ex, se é para salvar 
+ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
+	7.1 - Adicionar ''sentimento'' a esse json, para a Hana tbm responder conforme o sentimento dela
+
+9. Agente que transcreve voz do usuario em tempo real e manda para a Hana e ela responde
+
+10. Preciso pensar em uma personalidade para a Hana
+
+11. Hana ta me chamando de Hana, arrumar isso. FEITO
+
+12. Hana ta me chamando de ''amor'', arrumar isso
