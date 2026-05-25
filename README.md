@@ -29,7 +29,7 @@ Exemplo de saída:
   "tool": null,
 }
 
-🧾 Hipocampo (Memória)
+# 🧾 Hipocampo (Memória)
 Sistema responsável por extrair memórias persistentes.
 
 Funções:
@@ -76,7 +76,7 @@ Cada memória recebe um score:
 4–6 → hobbies e preferências
 1–3 → detalhes leves
 
-🧩 Tool System
+# 🧩 Tool System
 O Brain pode acionar ferramentas externas.
 
 Ferramentas já feitas:
@@ -84,7 +84,7 @@ Ferramentas já feitas:
 🌐 Pesquisado na web
 🎥 Pesquisado no YouTube
 
-🗣️ Mouth (Personalidade)
+# 🗣️ Mouth (Personalidade)
 Responsável por:
 gerar resposta final da Hana
 aplicar estilo de fala
@@ -95,23 +95,11 @@ transcrição de voz em tempo real
 envio direto ao Brain
 resposta instantânea da Hana
 
-👁️ Vision System
+# 👁️ Vision System
 Entrada visual (imagem/vídeo)
 interpretação multimodal
 
-🔄 Sentimento dinâmico
-Brain retorna emoção junto com ação
-Hana adapta personalidade em tempo real
-
-💰 Integração com API OpenAI
-Fallback para LLM externo
-Controle de custo por tarefa
-
-⚡ Execução local
-Inicialização junto ao sistema
-Hotkey (V) para ativar interação
-
-🎯 Objetivo do projeto
+# 🎯 Objetivo do projeto
 Criar uma IA modular com:
 
 memória persistente real
@@ -120,7 +108,7 @@ separação de agentes cognitivos
 comportamento adaptativo
 arquitetura escalável estilo "cérebro artificial"
 
-⚠️ Status
+# ⚠️ Status
 🚧 Em desenvolvimento ativo e experimental
 
 O sistema já possui:
@@ -131,7 +119,7 @@ fala/personalidade/comportamento funcional
 tools funcionais
 arquitetura modular base
 
-🧠 Nota final
+# 🧠 Nota final
 
 Hana não é um chatbot.
 É um sistema de agentes cognitivos modulares altamente escalavel com memória persistente e execução de ferramentas
