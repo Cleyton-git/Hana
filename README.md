@@ -95,10 +95,6 @@ transcrição de voz em tempo real
 envio direto ao Brain
 resposta instantânea da Hana
 
-# 👁️ Vision System
-Entrada visual (imagem/vídeo)
-interpretação multimodal
-
 # 🎯 Objetivo do projeto
 Criar uma IA modular com:
 
