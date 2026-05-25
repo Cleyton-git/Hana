@@ -1,31 +1,93 @@
-import requests
+import webbrowser, requests, json
 
-API_KEY = "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"
+def Pesquisar_web(Pai):
+    system_search = {
+  "role": "system",
+  "content": """
+Você é um módulo de EXTRAÇÃO DE QUERY para pesquisa na web.
 
-headers = {
-    "Authorization": f"Bearer {API_KEY}",
-    "Content-Type": "application/json"
+Sua função é simples:
+- Receber uma frase do usuário
+- Retornar APENAS a QUERY de pesquisa limpa
+
+Você NÃO conversa.
+Você NÃO explica.
+Você NÃO adiciona palavras.
+Você NÃO responde perguntas.
+
+━━━━━━━━━━━━━━━━━━━━━━
+SAÍDA OBRIGATÓRIA
+━━━━━━━━━━━━━━━━━━━━━━
+
+Retorne APENAS uma string com a query final.
+
+Exemplo:
+"como fazer api em python"
+
+Nada mais.
+
+━━━━━━━━━━━━━━━━━━━━━━
+REGRAS DE LIMPEZA
+━━━━━━━━━━━━━━━━━━━━━━
+
+Remova:
+- nomes de comando (Hana, filha, pai)
+- pedidos educados (por favor, para mim)
+- verbos de comando (pesquisa, pesquisar, busca, procurar, vê, olha)
+
+━━━━━━━━━━━━━━━━━━━━━━
+EXEMPLOS
+━━━━━━━━━━━━━━━━━━━━━━
+
+Input:
+"Hana pesquisa como fazer API em Python pra mim"
+
+Output:
+como fazer API em Python
+
+---
+
+Input:
+"filha, pesquisa melhores jogos de 2024"
+
+Output:
+melhores jogos de 2024
+
+---
+
+Input:
+"procura no google como treinar IA"
+
+Output:
+como treinar IA
+
+━━━━━━━━━━━━━━━━━━━━━━
+REGRA FINAL
+
+- Retorne SOMENTE a query
+- Sem aspas
+- Sem JSON
+- Sem explicações
+"""
 }
-
-data = {
-    "model": "gpt-5-mini",
-    "messages": [
-        {
-            "role": "system",
-            "content": "Você é Hana."
-        },
+    messages = [
+        system_search,
         {
             "role": "user",
-            "content": "Oi Hana"
+            "content": Pai
         }
-    ],
-    "max_completion_tokens": 100
-}
+    ]
+    query = requests.post("http://127.0.0.1:11434/api/chat",
+        json={
+            "model": "qwen2.5:3b",
+            "messages": messages,
+            "stream": False
+        }
+    )
+    query = json.loads(query.text)
+    return query['message']['content']
+    
 
-response = requests.post(
-    "https://api.openai.com/v1/chat/completions",
-    headers=headers,
-    json=data
-)
-
-print(response.json())
+query = Pesquisar_web(Pai="Hana, pesquisa atarashi gakkou para mim")    
+print(query)
+webbrowser.open(f"https://www.google.com/search?q={query}")

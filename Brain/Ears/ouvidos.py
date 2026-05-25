@@ -2,23 +2,22 @@ import keyboard
 import sounddevice as sd
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
-from ..Tecnico.hana_log import Hana_console, Hana_log
+import textwrap
 
+LARGURA = 54
 fs = 16000
 audio_data = []
-#model = WhisperModel(
-#        "medium",
-#        device="cpu",
-#        compute_type="int8"
-#    )
+model = WhisperModel(
+        "medium",
+        device="cpu",
+        compute_type="int8"
+    )
 
 def Fala_Pai():
     while True:
-        print("Esperando a tecla V ser pressionada...")
+        linha("AUDIO    | Esperando ativação [V]...")
 
         keyboard.wait("v")
-
-        Hana_log("🎙 Gravando...")
 
         audio_data = []
 
@@ -39,15 +38,11 @@ def Fala_Pai():
         stream.stop()
         stream.close()
 
-        Hana_log("🛑 Gravação encerrada.")
-
         import numpy as np
 
         audio = np.concatenate(audio_data, axis=0)
 
         write("audio.wav", fs, audio)
-
-        print("🧠 Transcrevendo...")
 
         segments, info = model.transcribe("audio.wav", language="pt")
 
@@ -55,6 +50,15 @@ def Fala_Pai():
 
         for segment in segments:
             texto += segment.text
+            
+        linha(f"STT      | {texto}")
 
         return texto
         
+def linha(texto):
+    linhas = textwrap.wrap(
+        str(texto),
+        width=LARGURA
+    )
+    for l in linhas:
+        print(f"║ {l:<{LARGURA}} ║")

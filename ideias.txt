@@ -28,16 +28,26 @@ memoria da Hana que tem mais de 0.75 de treshhold, se eu conseguir achar uma for
 as tbm, eu vou conseguir um contexto bem proximo do humano. FEITO, soq n coloquei a importancia
 
 8. Pensei em uma melhoria para a ideia 7, inves de mandar o embeding da frase inteira, vamos enviar o embeding do regex delas,
-dessa forma vamos conseguir detectar oq realmente precisa estar no contexto da Hana
+dessa forma vamos conseguir detectar oq realmente precisa estar no contexto da Hana. FEITO
 
-8. A gente que determina a action do cerebro da Hana, ele deve retornar um Json com oq ele vai fazer. Ex, se é para salvar 
+9. A gente que determina a action do cerebro da Hana, ele deve retornar um Json com oq ele vai fazer. Ex, se é para salvar 
 ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
-	7.1 - Adicionar ''sentimento'' a esse json, para a Hana tbm responder conforme o sentimento dela
+	7.1 - Adicionar ''sentimento'' a esse json, para a Hana tbm responder conforme o sentimento dela. melhoria futura
 
-9. Agente que transcreve voz do usuario em tempo real e manda para a Hana e ela responde
+9. Agente que transcreve voz do usuario em tempo real e manda para a Hana e ela responde. FEITO
 
-10. Preciso pensar em uma personalidade para a Hana
+10. Criar a função TOOLS para a Hana, o cerebro retorna uma action se for necessario # PRECISO SALVAR quando a Hana faz isso no bd, para virar contexto kkk
+	10.1 - Tool abridor de projetos. FEITO
+	10.2 - Tool pesquisador de web. FEITO
+	10.3 - Tool pesquisador do youtube. Fazendo
+	10.4 - Tool para abrir aplicativos (lol, spotify e etc)
+	10.5 - Tool para tocar músicas (especificamente no yt)
 
-11. Hana ta me chamando de Hana, arrumar isso. FEITO
 
-12. Hana ta me chamando de ''amor'', arrumar isso
+11. Criar "VISION" para a Hana
+
+11. Integrar a Hana com a api do chatgpt, ela por completo e ter noção dos gastos
+
+12. Colocar a Hana para iniciar com o pc e sempre que eu apertar V eu falo com ela 
+
+

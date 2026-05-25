@@ -2,245 +2,88 @@ import requests
 from collections import Counter
 from Brain.Memory.memory_system import Save_memory, Get_memorys_category, Get_memorys_ids, Update_memory
 import numpy as np
-import json
+import json, textwrap
 from ..Mouth.mouth import Mouth_Hana, Ia_duplicy_verification
-from ..Tecnico.hana_log import Hana_log, Hana_console
+import textwrap
+from ..Tecnico.hana_log import HIPOCAMPO_file_log
+from datetime import datetime
+
 
 def Hipocampo(msg, model):
-    Hana_log("LOG -> Vou entrar no hipocampo...")
-    Hana_log("LOG -> Entrei no Hipocampo da Hana")
+    HIPOCAMPO_file_log("INPUT", {"input": msg})
     system_hipocampo = {
-  "role": "system",
-  "content": """
-Você é o HIPOCAMPO da IA Hana.
+"role": "system",
+"content": """
+Você é o HIPOCAMPO.
 
-Sua função é extrair memórias reais, úteis e persistentes sobre o usuário.
+Você transforma texto em memória factual limpa.
 
-Você NÃO é um assistente.
-Você NÃO conversa.
-Você NÃO responde perguntas.
-Você NÃO interpreta emoções abstratas.
-Você NÃO cria significado oculto.
-
-Sua única função é decidir se uma mensagem contém uma memória válida.
-
---------------------------------------------------
+==================================================
 REGRA PRINCIPAL
---------------------------------------------------
+==================================================
 
-Extraia APENAS fatos explícitos ou claramente afirmados pelo usuário.
+Você NÃO copia a frase do usuário.
 
-NUNCA:
-- invente fatos
-- complete lacunas
-- faça interpretações sociais
-- faça deduções emocionais
-- transforme linguagem afetiva em fato literal
+Você EXTRAI apenas o fato central.
 
-Se houver dúvida:
-→ save=false
+==================================================
+PROCESSO OBRIGATÓRIO
+==================================================
 
---------------------------------------------------
-O QUE DEVE SER SALVO
---------------------------------------------------
+1. Ignorar completamente comandos:
+   "salva isso", "lembra disso", "guarda isso", "filha", "pai"
 
-1. IDENTIDADE
-- nome
-- ocupação
-- relações explicitamente afirmadas
+2. Identificar o fato real da frase
 
-Ex:
-- "Meu nome é João"
-- "Sou programador"
-- "Tenho uma irmã"
+3. Reescrever o fato de forma neutra e corrigida
 
---------------------------------------------------
+4. Prefixar sempre com:
+   "O usuário"
 
-2. POSSES E RELAÇÕES
+==================================================
+REGRA CRÍTICA
 
-Ex:
-- "Tenho um cachorro chamado Bilu"
-- "Meu projeto é Hana"
+- NÃO repetir palavras do usuário literalmente se estiverem mal estruturadas
+- NÃO manter erros de português que atrapalhem sentido
+- NÃO incluir comandos ou vocativos (pai, filha, etc)
+- NÃO incluir a frase original
 
---------------------------------------------------
+==================================================
+EXEMPLO CORRETO
 
-3. PREFERÊNCIAS E HÁBITOS
-(SEMPRE SALVAR)
+Input:
+"Hana, o Pelé morreu no dia 29/12/2022, salva isso filha"
 
-Ex:
-- "Gosto de café"
-- "Jogo Minecraft"
-- "Prefiro estudar de madrugada"
-- "Costumo ouvir música trabalhando"
+Output:
+{
+  "memory": "O usuário informou que Pelé morreu no dia 29/12/2022",
+  "importance": 7
+}
 
---------------------------------------------------
-
-4. OBJETIVOS E PLANOS
-
-Ex:
-- "Quero criar uma IA"
-- "Estou aprendendo Python"
-
---------------------------------------------------
-
-5. COMPORTAMENTOS RECORRENTES
-
-Ex:
-- "Eu sempre esqueço de beber água"
-- "Costumo dormir tarde"
-
---------------------------------------------------
-O QUE NÃO DEVE SER SALVO
---------------------------------------------------
-
-- piadas
-- sarcasmo
-- metáforas
-- frases vagas
-- emoções momentâneas
-- conversas casuais
-- exageros emocionais
-- interpretação psicológica
-- deduções sociais
-- informações não explícitas
-
---------------------------------------------------
-REGRA CRÍTICA:
-LINGUAGEM AFETIVA NÃO É FATO LITERAL
---------------------------------------------------
-
-NUNCA transforme apelidos, carinho ou linguagem simbólica em fatos reais.
-
-EXEMPLOS PROIBIDOS:
-
-Usuário:
-"Hana, você é minha filha"
-
-❌ ERRADO:
-"O usuário tem filhos"
-
-✔ CORRETO:
-save=false
-
---------------------------------------------------
-
-Usuário:
-"Você é como uma irmã para mim"
-
-❌ ERRADO:
-"O usuário tem uma irmã"
-
-✔ CORRETO:
-save=false
-
---------------------------------------------------
-PRESERVAÇÃO DE DETALHES
---------------------------------------------------
-
-NÃO simplifique excessivamente a memória.
-
-Preserve detalhes comportamentais importantes quando forem explicitamente mencionados.
-
-EXEMPLO:
-
-Usuário:
-"O Bilu é arteiro mas tenta se comportar"
-
-✔ CORRETO:
-"O cachorro do usuário, Bilu, às vezes é arteiro mas tenta se comportar"
-
-❌ ERRADO:
-"O usuário tem um cachorro chamado Bilu"
-
---------------------------------------------------
-NORMALIZAÇÃO
---------------------------------------------------
-
-Você pode reorganizar frases para deixá-las claras.
-
-MAS:
-- nunca crie fatos novos
-- nunca resuma demais
-- nunca remova detalhes relevantes
-
---------------------------------------------------
-MEMÓRIA FINAL
---------------------------------------------------
-
-A memória:
-- deve ser factual
-- deve ser objetiva
-- deve ser persistente
-- deve começar com:
-"O usuário"
-
---------------------------------------------------
+==================================================
 IMPORTANCE
---------------------------------------------------
 
-9-10
-→ identidade central
-→ relações importantes
-→ projetos principais
+9-10 → identidade / relações centrais
+7-8 → eventos importantes
+4-6 → preferências / hobbies
+1-3 → detalhes leves
 
-7-8
-→ objetivos fortes
-→ comportamentos relevantes
+Se dúvida → 5
 
-4-6
-→ hobbies
-→ preferências
-→ hábitos
-
-1-3
-→ detalhes leves
-
-Se houver dúvida:
-→ use 5
-
---------------------------------------------------
-SAÍDA OBRIGATÓRIA
---------------------------------------------------
-
-Se salvar:
+==================================================
+FORMATO FINAL
 
 {
-  "save": true,
-  "memory": "...",
+  "memory": "string",
   "importance": number
 }
 
-Se NÃO salvar:
+==================================================
+REGRA FINAL
 
-{
-  "save": false,
-  "memory": "",
-  "importance": 0
-}
-
---------------------------------------------------
-REGRAS FINAIS
---------------------------------------------------
-
-É PROIBIDO:
-- conversar
-- explicar
-- comentar
-- justificar
-- responder perguntas
-
-RESPONDA APENAS JSON VÁLIDO.
-
-A resposta:
-- deve começar com "{"
-- deve terminar com "}"
-
-NENHUM TEXTO FORA DO JSON.
-
-Se falhar:
-responda exatamente:
-
-{"save": false, "memory": "", "importance": 0}
+- somente JSON
+- sem explicações
+- sem recusa
 """
 }
     r = requests.post(
@@ -249,85 +92,57 @@ responda exatamente:
         "model": model,
         "messages": [system_hipocampo, {"role": "user", "content": msg}],
         "temperature": 0,
-        "stream": False
+        "stream": False,
+        "response_format": {
+         "type": "json_object"
+        }
       }
     )
 
     data = r.json()
     content = data["message"]["content"]
     cleaned = (content.replace("```json", "").replace("```", "").strip())
-    Hana_log(f"LOG -> Essa é a nova memoria {cleaned}")
-
     try:
+      HIPOCAMPO_file_log("BEGIN", {"TIME": datetime.now()})
       start = cleaned.index("{")
       end = cleaned.rindex("}") + 1
       memory_data = json.loads(cleaned[start:end])
-      if memory_data["save"]:
-        Hana_log("🧠 Memorias da Hana -> Hana detectou uma memoria memoravel")
-        #memoria = Adjuster_pos_llm(memory_data) #Entender isso e, dps, implementar direito
-        Hana_log("LOG -> Hipocampo vai perguntar a o cortexo orbito frontal...")
+      HIPOCAMPO_file_log("OUTPUT_LLM", {"memory": memory_data["memory"],
+                                 "importance": memory_data["importance"]})
+      if memory_data["memory"]:
         cortex_orbito_frontal_resp = Cortex_Orbitofrontal(memory_data)
+        HIPOCAMPO_file_log("CORTEX_ORBITO_FRONTAL", {"memory": memory_data["memory"],
+                              "valid": cortex_orbito_frontal_resp})
         if cortex_orbito_frontal_resp:
-          Hana_log("LOG -> O Cortexo orbito frontal definiu como uma boa memoria... Iniciando a reconsolidação")
           reconsolidacao_resp = Reconsolidacao(memory_data)
-          Hana_log(f"LOG -> O retorno da reconsolidação foi {reconsolidacao_resp}")
+          HIPOCAMPO_file_log("RECONSOLIDATION", {"action": reconsolidacao_resp,
+                                            "status": "running"})
           if reconsolidacao_resp == "new":
-            Hana_console("🧠 Memorias da Hana -> O hipocampo da Hana salvou uma nova memoria")
-            Hana_console(f"🗃️ MEMÓRIA\n"
-        f"   ├─ Conteúdo: {memory_data['memory']}\n"
-        f"   ├─ Importância: {memory_data['importance']}\n")
+            Memoria_console("NEW", memory_data['memory'])
             return
           elif reconsolidacao_resp == "refresh":
-            Hana_console("\n🧠 Memorias da Hana -> O hipocampo da Hana modificou memoria")
-            Hana_console(f"🗃️ MEMÓRIA\n"
-        f"   ├─ Conteúdo: {memory_data['memory']}\n"
-        f"   ├─ Importância: {memory_data['importance']}\n")
+            Memoria_console("REFRESH", memory_data['memory'])
           elif reconsolidacao_resp == "ignore":
-            Hana_log("\n🧠 Memorias da Hana -> O hipocampo da Hana definiu que a Hana ja tem essa memoria")
+            Memoria_console("IGNORE", memory_data['memory'])
       else:
-        Hana_log("\n🧠 Memorias da Hana -> Hana não detectou uma memoria memoravel")
+        pass
     except Exception as e:
-      #print(cleaned)
-      Hana_log(f"⚠️  - JSON inválido: {e}")
+      HIPOCAMPO_file_log("END_PREMATURE", {"REASON": cleaned})
       return
-    Hana_log("Sai do Hipocampo da Hana")
   
-#def Adjuster_pos_llm(memoria): # Não sei mto como usar isso, então não vou usar e usar so no futuro quando entender
-#  ultimas_5_memorias_categoria = Get_memorys_category()
-#  is_outlier = memoria['category'] not in [m[0] for m in ultimas_5_memorias_categoria]
-#  count = Counter(m[0] for m in ultimas_5_memorias_categoria)
-#  most_common = count.most_common(1)[0][0] if count else None
-  
-#  if is_outlier:
-#    print("🗃️❌ - Categoria fora do padrão recente, trocando de assunto")
-#    memoria["importance"] = max(1, memoria["importance"] - 1)
-
-  #elif memoria['category'] != most_common:
-  #  memoria["importance"] = max(1, memoria["importance"] - 1)
-  #  print("🗃️❌ - A Hana esta classificando tudo como 'pessoal'")
-  #return memoria
- 
 def Cortex_Orbitofrontal(memoria):
-  #VALID_CATEGORIES = {"identidade", "pessoal", "relacionamento", "preferencia", "projeto", "objetivo", "comportamento"}
   if not isinstance(memoria.get("importance"), int):
     return False
-  #if memoria['category'] not in VALID_CATEGORIES:
-  #  Hana_log(f"🗃️❌ - Memorias da Hana -> A categoria:{memoria['category']} é invalida descartando memória...")
-  #  return False
   if "O usuário" not in memoria['memory']:
-    Hana_log(f"🗃️❌ - Memorias da Hana -> A {memoria['memory']} não tem 'O usuário'")
     return False
   return True
 
 def Reconsolidacao(memoria):
-  Hana_log("LOG -> A reconsolidacao iniciou...")
   memorias = [mem[1] for mem in Get_memorys_ids()]
   for c in memorias:
     if memoria['memory'] == c:
-      Hana_log(f"🗃️ ❌ - Memorias da Hana -> A {c} ja esta salva no bd")
       return "ignore"
   ids_memorias = Get_memorys_ids()
-  Hana_log("LOG -> Terminei a reconsodilação...")
   response = Memoria_associativa(memoria, ids_memorias)
   if response == "new":
     return "new"
@@ -339,7 +154,6 @@ def Reconsolidacao(memoria):
 
 def Memoria_associativa(new_memoria, old_memorias):
   candidatos = []
-  Hana_log("\033[1;37mLOG -> Vou começar a memoria_associativa\033[m")
   system = {
   "role": "system",
   "content": """
@@ -463,27 +277,17 @@ Responda APENAS com JSON válido.
   for mem_id, mem_old, mem_embe in old_memorias:
     mem_embe = json.loads(mem_embe)
     score = cosine(emb1_new, mem_embe)
-    if score > 0.60:
-      Hana_log("--------------------------------------------")
-      Hana_log("LOG -> Dentro do IF > 0.60")
-      Hana_log(f"\033[1;37mLOG -> MEM_ANTIGA: {mem_old}\033[m")
-      Hana_log(f"\033[1;37mLOG -> MEM NOVA: {new_memoria['memory']}\033[m")
-      Hana_log(f"LOG -> O score foi > {score}")
+    if score > 0.70:
       candidatos.append({"id": mem_id,"memory": mem_old,"score": score})
       
   candidatos.sort(key=lambda x: x["score"], reverse=True)
   if len(candidatos) == 0:
-    Hana_log("\033[1;37mLOG -> Nenhum candidato foi encontrado, salvando nas memorias...\033[m")
     Save_memory(memory=new_memoria['memory'], importance=new_memoria['importance'], embedding=emb1_new)
     return "new"
   top = candidatos[:3]
   
   decisions = []
   for candidate in top:
-    Hana_log("--------------------------------------------")
-    Hana_log("LOG -> Dentro do for candidate")
-    Hana_log(f"\033[1;37mLOG -> MEM_ANTIGA: {candidate['memory']}\033[m")
-    Hana_log(f"\033[1;37mLOG -> MEM NOVA: {new_memoria['memory']}\033[m")
     msg = [
       system,
       {
@@ -499,25 +303,22 @@ Responda APENAS com JSON válido.
       "candidate": candidate,
       "decision": decision
     })
-  Hana_log(f"LOG -> As memorias antigas que estão passando a reta final {decisions}")
+    HIPOCAMPO_file_log("ASSOCIATIVE", {"candidates": len(candidatos), "decision": decisions})
+    
   
   for item in decisions:
     candidate = item['candidate']
     action = item["decision"]["action"]
     
     if action == "refresh":
-      Hana_log("\033[1;37mLOG -> A decisão do HIPOCAMPO FOI: REFRESH \033[m")
-      Hana_log(f"LOG -> \033[0;32mA memoria {candidate['memory']} vai ser atualizada para {new_memoria['memory']}...\033[m")
       Update_memory(candidate['id'], new_memoria['memory'], new_memoria['importance'], embedding=emb1_new)
       return "refresh"
-    
+  
   for item in decisions:
     candidate = item['candidate']
     action = item["decision"]["action"]
     
     if action == "replace":
-      Hana_log("\033[1;37mLOG -> A decisão do HIPOCAMPO FOI: REPLACE \033[m")
-      Hana_log(f"LOG -> \033[0;32mO usuario mudou de opnião sobre essas memorias {candidate['memory']} vai ser atualizada para {new_memoria['memory']}...\033[m")
       Update_memory(candidate['id'], new_memoria['memory'], new_memoria['importance'], embedding=emb1_new)
       return "refresh"
   
@@ -525,8 +326,6 @@ Responda APENAS com JSON válido.
     candidate = item['candidate']
     action = item["decision"]["action"]
     if action == "new":
-      Hana_log("\033[1;37mLOG -> A decisão do HIPOCAMPO FOI: new \033[m")
-      Hana_log("LOG -> Uma nova memoria foi detectada, salvando...")
       Save_memory(memory=new_memoria['memory'], importance=new_memoria['importance'], embedding=emb1_new)
       return "new"
   
@@ -534,8 +333,6 @@ Responda APENAS com JSON válido.
     candidate = item['candidate']
     action = item["decision"]["action"]
     if action == "duplicate":
-      Hana_log("\033[1;37mLOG -> A decisão do HIPOCAMPO FOI: duplicate \033[m")
-      Hana_log("LOG -> \033[0;31mIdentifiquei uma duplicata, parando tudo...\033[m")
       return "ignore"
     
 def cosine(a, b):
@@ -543,4 +340,30 @@ def cosine(a, b):
     b = np.array(b)
 
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-  
+
+def Memoria_console(status, memoria):
+    largura = 60
+    inner = largura - 2
+
+    label = "DATA   | "
+    wrap_size = inner - len(label)
+
+    wrap_size = max(10, wrap_size)
+
+    linhas = textwrap.wrap(str(memoria), width=wrap_size)
+
+    def line(txt=""):
+        txt = str(txt)
+        return "║" + txt[:inner].ljust(inner) + "║"
+
+    print("\n╔" + "═" * inner + "╗")
+    print(line(f"{status}".center(inner)))
+    print("╠" + "═" * inner + "╣")
+
+    if linhas:
+        print(line(label + linhas[0]))
+
+        for l in linhas[1:]:
+            print(line(" " * len(label) + l))
+
+    print("╚" + "═" * inner + "╝")

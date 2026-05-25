@@ -1,3 +1,7 @@
 .env.txt
 hana_debug.log
 .venv/
+.gitignore
+audio.wav
+voz.mp3
+.gitignore
