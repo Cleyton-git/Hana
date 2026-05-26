@@ -9,7 +9,7 @@ def cosine(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def create_tables():
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute("""
@@ -32,7 +32,7 @@ def create_tables():
     con.commit()
 
 def Get_memorys_context(embe):
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     #cursor.execute(
@@ -68,7 +68,7 @@ def Get_memorys_context(embe):
 
 
 def Get_memorys():
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     #cursor.execute(
@@ -92,7 +92,7 @@ def Get_memorys():
     ]
 
 def Get_contexto(limit=1000):
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute(
@@ -107,7 +107,7 @@ def Get_contexto(limit=1000):
     ]
 
 def Save_message(role, content):
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute(
@@ -119,7 +119,7 @@ def Save_message(role, content):
 def Save_memory(memory, importance, embedding):
     import json
     embedding_json = json.dumps(embedding)
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute(
@@ -130,7 +130,7 @@ def Save_memory(memory, importance, embedding):
     con.close()
 
 def Get_memorys_category():
-    con = sqlite3.connect("database/hana.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     cursor.execute(
         f"SELECT category from memorias ORDER BY id ASC"
@@ -139,7 +139,7 @@ def Get_memorys_category():
     return rows[-5:]
 
 def Get_memorys_ids():
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     cursor.execute(
         f"SELECT id, memory, embedding from memorias ORDER BY id ASC"
@@ -150,7 +150,7 @@ def Get_memorys_ids():
 def Update_memory(mem_id, new_memory, importance=None, embedding=None):
     import json
     embedding_json = json.dumps(embedding)
-    con = sqlite3.connect("Brain/Memory/Hana_itself/hana_memorys.db")
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
 
     query = """
@@ -170,6 +170,8 @@ def Update_memory(mem_id, new_memory, importance=None, embedding=None):
 
 #create_tables()
 #Get_memorys_context(embe=10)
+memorias = Get_memorys()
+print(memorias)
 
 
 #memorias = [mem[1] for mem in get_memorys_ids()]

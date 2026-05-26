@@ -36,12 +36,13 @@ ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
 
 9. Agente que transcreve voz do usuario em tempo real e manda para a Hana e ela responde. FEITO
 
-10. Criar a função TOOLS para a Hana, o cerebro retorna uma action se for necessario # PRECISO SALVAR quando a Hana faz isso no bd, para virar contexto kkk
+10. Criar a função TOOLS para a Hana, o cerebro retorna uma action se for necessario # PRECISO SALVAR quando a Hana faz isso no bd, para virar contexto kkk	
 	10.1 - Tool abridor de projetos. FEITO
 	10.2 - Tool pesquisador de web. FEITO
-	10.3 - Tool pesquisador do youtube. Fazendo
-	10.4 - Tool para abrir aplicativos (lol, spotify e etc)
-	10.5 - Tool para tocar músicas (especificamente no yt)
+	10.3 - Tool pesquisador do youtube. FEITO
+	10.4 - Tool para tocar músicas e videos(especificamente no yt)
+	10.5 - Tool para abrir aplicativos (lol, spotify e etc)
+	
 
 
 11. Criar "VISION" para a Hana

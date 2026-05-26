@@ -1,8 +1,10 @@
-import requests
-import json
-import edge_tts
-import asyncio
+import requests, os, edge_tts, json, asyncio
 from playsound3 import playsound
+from dotenv import load_dotenv
+from ..Tecnico.hana_log import Token_log
+
+load_dotenv()
+HANA_KEY = os.getenv("Hana_KEY")
 
 async def Criar_frase(texto):
   communicate = edge_tts.Communicate(
@@ -14,21 +16,25 @@ async def Criar_frase(texto):
 
   await communicate.save("voz.mp3")
   
-def Mouth_Hana(url, msg, model):
-    r = requests.post(
-      url,
-        json={
-          "model": model,
-          "messages": msg,
-          "stream": False,
-          
-        }
-    )
-    
-    r = r.json()["message"]["content"]
-    asyncio.run(Criar_frase(r))
-    playsound("voz.mp3")
-    return r
+def Mouth_Hana(msg):
+  response = requests.post("https://api.openai.com/v1/chat/completions",
+                        headers = {"Authorization": f"Bearer {HANA_KEY}",
+                                    "Content-Type": "application/json"
+                                  },
+                        json={
+                          "model": "gpt-5-nano",
+                          "messages": msg,
+                          "max_completion_tokens": 1000,
+                          },
+                      )
+
+  data = response.json()
+  usage = data['usage']
+  Token_log(model="gpt-5-nano", usage=usage, func="Mouth")
+  content = data['choices'][0]["message"]["content"]
+  asyncio.run(Criar_frase(content))
+  playsound("voz.mp3")
+  return content
 
 
 def Ia_duplicy_verification(msg, model):

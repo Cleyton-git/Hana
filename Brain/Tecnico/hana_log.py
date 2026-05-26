@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 import json
-import textwrap
+import os
 
 logger = logging.getLogger("Hana")
 logger.setLevel(logging.INFO)
@@ -23,6 +23,20 @@ def HIPOCAMPO_file_log(stage: str, data: dict):
     }
 
     logger.info(json.dumps(payload, ensure_ascii=False))
+
+def Token_log(model, usage, func):
+
+    payload = {
+        "timestamp": str(datetime.now()),
+        "model": model,
+        "function": func,
+        "prompt_tokens": usage.get("prompt_tokens", 0),
+        "completion_tokens": usage.get("completion_tokens", 0),
+        "total_tokens": usage.get("total_tokens", 0)
+    }
+    
+    with open("Brain/tokens.log", "a", encoding="utf-8") as f:
+        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
         
 def Hana_console(msg):
     logger.warning(msg)

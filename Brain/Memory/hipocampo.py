@@ -1,122 +1,92 @@
-import requests
-from collections import Counter
+import requests, json, textwrap
 from Brain.Memory.memory_system import Save_memory, Get_memorys_category, Get_memorys_ids, Update_memory
 import numpy as np
-import json, textwrap
-from ..Mouth.mouth import Mouth_Hana, Ia_duplicy_verification
-import textwrap
+from ..Mouth.mouth import Ia_duplicy_verification
 from ..Tecnico.hana_log import HIPOCAMPO_file_log
-from datetime import datetime
+from ..Tecnico.hana_log import Token_log
 
+system_hipocampo = {
+  "role": "system",
+  "content": """
+You are the HIPPOCAMPUS.
 
-def Hipocampo(msg, model):
-    HIPOCAMPO_file_log("INPUT", {"input": msg})
-    system_hipocampo = {
-"role": "system",
-"content": """
-Você é o HIPOCAMPO.
+Your job is to extract a clean factual memory from user messages.
 
-Você transforma texto em memória factual limpa.
+━━━━━━━━━━━━━━━━━━━
+RULES
+━━━━━━━━━━━━━━━━━━━
 
-==================================================
-REGRA PRINCIPAL
-==================================================
+- Extract ONLY the core factual information
+- Ignore commands, filler, vocatives, and repetition
+- Do NOT copy the user's sentence
+- Do NOT include the original text
+- Do NOT include instructions like "remember this", "save this"
+- Always rewrite in neutral, corrected form starting with: "O usuário"
 
-Você NÃO copia a frase do usuário.
+━━━━━━━━━━━━━━━━━━━
+PROCESS
+━━━━━━━━━━━━━━━━━━━
 
-Você EXTRAI apenas o fato central.
+1. Detect the real fact
+2. Remove noise (commands, greetings, filler words)
+3. Normalize grammar (clean Portuguese)
+4. Output only the extracted fact
 
-==================================================
-PROCESSO OBRIGATÓRIO
-==================================================
+━━━━━━━━━━━━━━━━━━━
+IMPORTANCE SCORE
+━━━━━━━━━━━━━━━━━━━
 
-1. Ignorar completamente comandos:
-   "salva isso", "lembra disso", "guarda isso", "filha", "pai"
+10 → identity, core relationships
+7–9 → important life events
+4–6 → preferences, hobbies, projects
+1–3 → minor details
 
-2. Identificar o fato real da frase
+If unsure → 5
 
-3. Reescrever o fato de forma neutra e corrigida
+━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT (STRICT)
+━━━━━━━━━━━━━━━━━━━
 
-4. Prefixar sempre com:
-   "O usuário"
-
-==================================================
-REGRA CRÍTICA
-
-- NÃO repetir palavras do usuário literalmente se estiverem mal estruturadas
-- NÃO manter erros de português que atrapalhem sentido
-- NÃO incluir comandos ou vocativos (pai, filha, etc)
-- NÃO incluir a frase original
-
-==================================================
-EXEMPLO CORRETO
-
-Input:
-"Hana, o Pelé morreu no dia 29/12/2022, salva isso filha"
-
-Output:
-{
-  "memory": "O usuário informou que Pelé morreu no dia 29/12/2022",
-  "importance": 7
-}
-
-==================================================
-IMPORTANCE
-
-9-10 → identidade / relações centrais
-7-8 → eventos importantes
-4-6 → preferências / hobbies
-1-3 → detalhes leves
-
-Se dúvida → 5
-
-==================================================
-FORMATO FINAL
+Return ONLY valid JSON:
 
 {
-  "memory": "string",
+  "memory": "O usuário ...",
   "importance": number
 }
-
-==================================================
-REGRA FINAL
-
-- somente JSON
-- sem explicações
-- sem recusa
 """
 }
-    r = requests.post(
-      "http://127.0.0.1:11434/api/chat",
-      json={
-        "model": model,
-        "messages": [system_hipocampo, {"role": "user", "content": msg}],
-        "temperature": 0,
-        "stream": False,
-        "response_format": {
-         "type": "json_object"
-        }
-      }
-    )
 
+def Hipocampo(memoria, HANA_KEY):
+    HIPOCAMPO_file_log("INPUT", {"input": memoria})
+    messages = [system_hipocampo, {"role": "user", "content": memoria}]
+    r = requests.post("https://api.openai.com/v1/chat/completions",
+                               headers = {"Authorization": f"Bearer {HANA_KEY}",
+                                           "Content-Type": "application/json"
+                                         },
+                            json={
+                                "model": "gpt-5-nano",
+                                "messages": messages,
+                                "max_completion_tokens": 40,
+                                "response_format": {
+                                        "type": "json_object"
+                                        },
+                                    "reasoning_effort": "minimal"
+                                    },
+                            )
     data = r.json()
-    content = data["message"]["content"]
-    cleaned = (content.replace("```json", "").replace("```", "").strip())
+    usage = data['usage']
+    Token_log(model="gpt-5-nano", usage=usage, func="Hipocampo")
+    content = data['choices'][0]["message"]["content"]
+    memory_data = json.loads(content)
+    
     try:
-      HIPOCAMPO_file_log("BEGIN", {"TIME": datetime.now()})
-      start = cleaned.index("{")
-      end = cleaned.rindex("}") + 1
-      memory_data = json.loads(cleaned[start:end])
-      HIPOCAMPO_file_log("OUTPUT_LLM", {"memory": memory_data["memory"],
-                                 "importance": memory_data["importance"]})
+      HIPOCAMPO_file_log("OUTPUT_LLM", {"memory": memory_data["memory"], "importance": memory_data["importance"]})
       if memory_data["memory"]:
         cortex_orbito_frontal_resp = Cortex_Orbitofrontal(memory_data)
-        HIPOCAMPO_file_log("CORTEX_ORBITO_FRONTAL", {"memory": memory_data["memory"],
-                              "valid": cortex_orbito_frontal_resp})
-        if cortex_orbito_frontal_resp:
+        HIPOCAMPO_file_log("CORTEX_ORBITO_FRONTAL", {"memory": memory_data["memory"], "valid": cortex_orbito_frontal_resp})
+        if cortex_orbito_frontal_resp == "ok":
           reconsolidacao_resp = Reconsolidacao(memory_data)
-          HIPOCAMPO_file_log("RECONSOLIDATION", {"action": reconsolidacao_resp,
-                                            "status": "running"})
+          HIPOCAMPO_file_log("RECONSOLIDATION", {"action": reconsolidacao_resp, "status": "running"})
           if reconsolidacao_resp == "new":
             Memoria_console("NEW", memory_data['memory'])
             return
@@ -125,25 +95,27 @@ REGRA FINAL
           elif reconsolidacao_resp == "ignore":
             Memoria_console("IGNORE", memory_data['memory'])
       else:
+        HIPOCAMPO_file_log("END_CORTEX_ORBITO_FRONTAL", {"REASON": cortex_orbito_frontal_resp})
         pass
     except Exception as e:
-      HIPOCAMPO_file_log("END_PREMATURE", {"REASON": cleaned})
+      print(e)
+      HIPOCAMPO_file_log("END_PREMATURE", {"REASON": memory_data})
       return
   
 def Cortex_Orbitofrontal(memoria):
-  if not isinstance(memoria.get("importance"), int):
-    return False
+  if type(memoria.get("importance")) is not int:
+    return "ERRO NO IMPORTANCE"
   if "O usuário" not in memoria['memory']:
-    return False
-  return True
+    return "NÃO COMEÇOU COM 'O USUARIO'"
+  return "ok"
 
 def Reconsolidacao(memoria):
   memorias = [mem[1] for mem in Get_memorys_ids()]
   for c in memorias:
     if memoria['memory'] == c:
       return "ignore"
-  ids_memorias = Get_memorys_ids()
-  response = Memoria_associativa(memoria, ids_memorias)
+  ids_e_memorias = Get_memorys_ids()
+  response = Memoria_associativa(memoria, ids_e_memorias)
   if response == "new":
     return "new"
   elif response == "refresh":
@@ -154,7 +126,28 @@ def Reconsolidacao(memoria):
 
 def Memoria_associativa(new_memoria, old_memorias):
   candidatos = []
-  system = {
+  emb1_new = requests.post(
+      "http://localhost:11434/api/embeddings",
+      json={
+          "model": "nomic-embed-text",
+          "prompt": new_memoria['memory']
+    }
+  ).json()['embedding']
+  for mem_id, mem_old, mem_embe in old_memorias:
+    mem_embe = json.loads(mem_embe)
+    score = cosine(emb1_new, mem_embe)
+    if score > 0.80:
+      candidatos.append({"id": mem_id,"memory": mem_old,"score": score})
+      
+  candidatos.sort(key=lambda x: x["score"], reverse=True)
+  if len(candidatos) == 0:
+    Save_memory(memory=new_memoria['memory'], importance=new_memoria['importance'], embedding=emb1_new)
+    return "new"
+  top = candidatos[:3]
+  
+  decisions = []
+  for candidate in top:
+    system_check_duplicidade = {
   "role": "system",
   "content": """
 Você é o HIPOCAMPO de um sistema de memória de uma IA.
@@ -267,29 +260,8 @@ B: "O usuário gosta de água"
 Responda APENAS com JSON válido.
 """
 }
-  emb1_new = requests.post(
-      "http://localhost:11434/api/embeddings",
-      json={
-          "model": "nomic-embed-text",
-          "prompt": new_memoria['memory']
-    }
-  ).json()['embedding']
-  for mem_id, mem_old, mem_embe in old_memorias:
-    mem_embe = json.loads(mem_embe)
-    score = cosine(emb1_new, mem_embe)
-    if score > 0.70:
-      candidatos.append({"id": mem_id,"memory": mem_old,"score": score})
-      
-  candidatos.sort(key=lambda x: x["score"], reverse=True)
-  if len(candidatos) == 0:
-    Save_memory(memory=new_memoria['memory'], importance=new_memoria['importance'], embedding=emb1_new)
-    return "new"
-  top = candidatos[:3]
-  
-  decisions = []
-  for candidate in top:
     msg = [
-      system,
+      system_check_duplicidade,
       {
           "role": "user",
           "content": json.dumps({
@@ -298,7 +270,16 @@ Responda APENAS com JSON válido.
           })
         }
     ]
-    decision = Ia_duplicy_verification(msg=msg, model="llama3.1:8b")
+    decision = requests.post(
+      "http://127.0.0.1:11434/api/chat",
+        json={
+          "model": "llama3.1:8b",
+          "messages": msg,
+          "stream": False,
+          "temperature": 0
+        })
+    decision = json.loads(decision.json()["message"]["content"])
+    #decision = Ia_duplicy_verification(msg=msg, model="llama3.1:8b")
     decisions.append({
       "candidate": candidate,
       "decision": decision

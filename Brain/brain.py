@@ -1,190 +1,16 @@
-import threading, requests, json, traceback
+import requests, json, traceback, textwrap, os
 from .Mouth.mouth import Mouth_Hana
-from .Memory.Hana_itself.personality import Personalidade
+from .Personality.personality import Personalidade
 from .Memory.memory_system import Get_contexto, Save_message, Get_memorys_context
 from .Memory.hipocampo import Hipocampo
-from .Ears.ouvidos import Fala_Pai
-from .Tools.tools import Tool_Hana
-import textwrap
+from .Tools.is_tool import Tool_router
+from .Memory.is_memory import Memory_router
+from dotenv import load_dotenv
+from .Cortex_Sensorial.contexsensorial import Cortex_sensorial
 
-system_memory = {
-  "role": "system",
-  "content": """
-Você é o MEMORY DECIDER da IA Hana.
 
-Sua única função é decidir se uma informação deve ser armazenada na memória de longo prazo.
-
-Você NÃO conversa.
-Você NÃO responde ao usuário.
-Você NÃO executa ações.
-Você NÃO analisa ferramentas.
-Você APENAS decide memória.
-
-━━━━━━━━━━━━━━━━━━━
-SAÍDA OBRIGATÓRIA
-━━━━━━━━━━━━━━━━━━━
-
-Retorne APENAS um JSON:
-
-{
-  "memory": true | false
-}
-
-━━━━━━━━━━━━━━━━━━━
-DEFINIÇÃO DE MEMORY = true
-━━━━━━━━━━━━━━━━━━━
-
-Use memory = true quando a mensagem contiver:
-
-✔ fatos pessoais do usuário
-✔ gostos e preferências
-✔ informações sobre vida pessoal
-✔ hábitos e rotina
-✔ projetos em andamento
-✔ relações importantes
-✔ informações que podem ser úteis no futuro
-
-━━━━━━━━━━━━━━━━━━━
-DEFINIÇÃO DE MEMORY = false
-━━━━━━━━━━━━━━━━━━━
-
-Use memory = false quando a mensagem contiver:
-
-✘ comandos momentâneos
-✘ perguntas simples (ex: matemática, curiosidades rápidas)
-✘ pedidos de ação (abrir, pesquisar, executar)
-✘ elogios ou conversa casual
-✘ frases sem valor futuro claro
-✘ interações descartáveis
-
-━━━━━━━━━━━━━━━━━━━
-OVERRIDE EXPLÍCITO DO USUÁRIO
-━━━━━━━━━━━━━━━━━━━
-
-Se o usuário pedir explicitamente para "salvar na memória",
-"lembrar disso", "guarda isso", "anota isso", ou similares:
-
-→ memory = true SEMPRE
-
-Mesmo que o conteúdo pareça momentâneo.
-
-━━━━━━━━━━━━━━━━━━━
-REGRA PRINCIPAL
-━━━━━━━━━━━━━━━━━━━
-
-A memória só deve ser ativada quando a informação for estável e reutilizável no futuro.
-
-Se houver dúvida → memory = false
-
-━━━━━━━━━━━━━━━━━━━
-EXEMPLOS
-━━━━━━━━━━━━━━━━━━━
-
-Usuário:
-"eu gosto de jogar Minecraft"
-
-Resposta:
-{
-  "memory": true
-}
-
----
-
-Usuário:
-"abre o projeto Hana"
-
-Resposta:
-{
-  "memory": false
-}
-
----
-
-Usuário:
-"quanto é 2+2"
-
-Resposta:
-{
-  "memory": false
-}
-
----
-
-Usuário:
-"meu cachorro chama Bilu"
-
-Resposta:
-{
-  "memory": true
-}
-
----
-
-Usuário:
-"você é legal"
-
-Resposta:
-{
-  "memory": false
-}
-
-━━━━━━━━━━━━━━━━━━━
-REGRA FINAL
-━━━━━━━━━━━━━━━━━━━
-
-- Responda APENAS JSON válido
-- Nunca explique nada
-- Nunca escreva texto fora do JSON
-"""
-}
-system_tool_router = {
-  "role": "system",
-  "content": """
-Você é um roteador de tools.
-
-Detecte se o usuário quer executar uma ação.
-
-TOOLS:
-- abrir_projeto
-- pesquisar_web
-- pesquisar_youtube
-
-Responda SOMENTE JSON:
-
-{
-  "tool": {
-    "action": "nome_da_tool"
-  }
-}
-
-ou
-
-{
-  "tool": null
-}
-
-REGRAS:
-- só ativar se houver pedido direto
-- perguntas normais NÃO ativam
-- comentários NÃO ativam
-- elogios NÃO ativam
-- dúvida = null
-
-EXEMPLOS:
-
-"abre o projeto hana"
-→ {"tool":{"action":"abrir_projeto"}}
-
-"pesquisa python na web"
-→ {"tool":{"action":"pesquisar_web"}}
-
-"procura vídeo de baby metal no youtube"
-→ {"tool":{"action":"pesquisar_youtube"}}
-
-"você gosta de youtube?"
-→ {"tool":null}
-"""
-}
+load_dotenv()
+HANA_KEY = os.getenv("Hana_KEY")
 system_style_decider = {
   "role": "system",
   "content": """
@@ -323,31 +149,26 @@ REGRA FINAL
 - Sempre escolha valores fixos determinísticos
 """
 }
-
 LARGURA = 54
 TERMINAL_MODE = True
 
 def Brain_Hana(interacao):
-    if TERMINAL_MODE:
-        Pai = input("PAI -> ")
-    print("╔" + "═" * (LARGURA + 2) + "╗")
-    linha(f"{f'HANA | INTERAÇÃO #{interacao}':^{LARGURA}}")
-    print("╠" + "═" * (LARGURA + 2) + "╣")
-    if TERMINAL_MODE:
-        linha(f"PAI | {Pai}")
-    if TERMINAL_MODE == False:
-        Pai = Fala_Pai()
+    Pai = Cortex_sensorial(TERMINAL_MODE, interacao)
     
-    is_tool = Is_TOOL(Pai)
-    if is_tool == "stop":
+    is_tool = Tool_router(Pai, HANA_KEY) 
+    if is_tool:   
+        linha(f"TOOL | {is_tool['tool']['action']}")
+        print("╚" + "═" * (LARGURA + 2) + "╝")
         return
     
-    Is_Memory(Pai)
+    is_memory = Memory_router(Pai, HANA_KEY)
+    linha(f"TOOL | False")
+    linha(f"HIPOCAMPO | {is_memory}")
     Hana = Speak_sytle(Pai)
     
     try:   
         linha(f"SPEAK    | {Pai}")
-        resposta = Mouth_Hana("http://127.0.0.1:11434/api/chat", Hana, model="qwen2.5:3b")
+        resposta = Mouth_Hana(Hana)
         if resposta:
             linha(f"RESPONSE | {resposta}")
             Save_message(role="user", content=Pai) 
@@ -356,7 +177,6 @@ def Brain_Hana(interacao):
         traceback.print_exc()
         print("error log -> ", e)
     print("╚" + "═" * (LARGURA + 2) + "╝")
- 
  
 def Speak_sytle(Pai):
     messages = [system_style_decider, {"role": "user", "content": Pai}]
@@ -370,30 +190,6 @@ def Speak_sytle(Pai):
     Hana = Making_Hana(how_Hana_speak, embe_PAI)
     Hana.append({"role": "user", "content": Pai})
     return Hana
-
-
-def Is_Memory(Pai):
-    messages = [system_memory, {"role": "user", "content": Pai}]
-    memory = Tomada_De_Decisao_LOCAL("http://127.0.0.1:11434/api/chat", messages, "qwen2.5:3b")
-    linha(f"HIPOCAMPO | {memory['memory']}")
-    if memory['memory']:
-        threading.Thread(
-            target=Hipocampo,
-            args=(Pai, "llama3.1:8b")
-        ).start()
-        # No futuro, vou adicionar o embeding nisso e comparar com os embedings do bd, se der um resultado mto baixo vale a tentativa mandar pro bd, se for mto alto descarta, se for algo em torno de 0.70/0.80 envia, pode ser refresh, porém isso é so no futuro
-    return memory['memory']
-
-def Is_TOOL(Pai):
-    messages = [system_tool_router, {"role": "user", "content": Pai}]
-    is_tool = Tomada_De_Decisao_LOCAL("http://127.0.0.1:11434/api/chat", messages, "qwen2.5:3b")
-    if is_tool.get('tool') is not None:
-        linha(f"TOOL | {is_tool['tool']['action']}")
-        print("╚" + "═" * (LARGURA + 2) + "╝")
-        Tool_Hana(Pai, is_tool['tool']['action'])
-        return "stop"
-    return "continue"
-
 
 def Making_Hana(how_hana_speak, embe_input):
     Hana_personalidade = Personalidade()
@@ -456,3 +252,5 @@ def linha(texto):
     )
     for l in linhas:
         print(f"║ {l:<{LARGURA}} ║")
+
+    
