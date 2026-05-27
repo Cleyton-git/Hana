@@ -9,7 +9,7 @@ logger.setLevel(logging.INFO)
 console = logging.StreamHandler()
 console.setLevel(logging.WARNING)
 
-file = logging.FileHandler("hana_debug.log", encoding="utf-8")
+file = logging.FileHandler("LOGS/HIPOCAMPO.log", encoding="utf-8")
 file.setLevel(logging.INFO)
 
 logger.addHandler(console)
@@ -35,7 +35,7 @@ def Token_log(model, usage, func):
         "total_tokens": usage.get("total_tokens", 0)
     }
     
-    with open("Brain/tokens.log", "a", encoding="utf-8") as f:
+    with open("LOGS/tokens.log", "a", encoding="utf-8") as f:
         f.write(json.dumps(payload, ensure_ascii=False) + "\n")
         
 def Hana_console(msg):

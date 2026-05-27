@@ -170,8 +170,8 @@ def Update_memory(mem_id, new_memory, importance=None, embedding=None):
 
 #create_tables()
 #Get_memorys_context(embe=10)
-memorias = Get_memorys()
-print(memorias)
+#memorias = Get_memorys()
+#print(memorias)
 
 
 #memorias = [mem[1] for mem in get_memorys_ids()]

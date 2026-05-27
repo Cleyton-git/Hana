@@ -1,6 +1,4 @@
-import webbrowser, requests, json
-import yt_dlp
+import requests
 
-
-
-
+r = requests.get("https://api.openai.com")
+print(r.status_code)

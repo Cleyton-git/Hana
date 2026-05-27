@@ -2,12 +2,10 @@ import requests, json, traceback, textwrap, os
 from .Mouth.mouth import Mouth_Hana
 from .Personality.personality import Personalidade
 from .Memory.memory_system import Get_contexto, Save_message, Get_memorys_context
-from .Memory.hipocampo import Hipocampo
 from .Tools.is_tool import Tool_router
 from .Memory.is_memory import Memory_router
 from dotenv import load_dotenv
 from .Cortex_Sensorial.contexsensorial import Cortex_sensorial
-
 
 load_dotenv()
 HANA_KEY = os.getenv("Hana_KEY")
@@ -156,7 +154,7 @@ def Brain_Hana(interacao):
     Pai = Cortex_sensorial(TERMINAL_MODE, interacao)
     
     is_tool = Tool_router(Pai, HANA_KEY) 
-    if is_tool:   
+    if is_tool != "continue":   
         linha(f"TOOL | {is_tool['tool']['action']}")
         print("╚" + "═" * (LARGURA + 2) + "╝")
         return

@@ -1,0 +1,50 @@
+Hana_FLUXO DE DADO:
+1: input do usuario na linha 154 ou retorno do sst na linha 161
+
+Is_TOOL(
+2: esse dado vai entrar na função Is_TOOL que vai:
+	1. Enviar para outra função TOOL_Fallback_Filter (faz sentido fazer isso? Tipo a função is_tool ja não deveria fazer isso? Tbm penso em mudar esse nome...)
+	2. Essa segunda função vai pegar esse dado e verificar se ele é um tool (uma ação que a Hana faz no computador do usuario) verificando se
+		2.1. O len da dado.split() é menor que 15. (Ordens como "toca tal música" tem menos de 15 caracters). Se sim o return é imediato, o LLM decidi se era uma ação
+		2.2. Ver se o dado tem "?". (Ordens não tem ?). Se sim o return é imediato, não era uma ação (O llm nem deveria se intrometer aqui isso é gasto puro por nada)
+		2.3. Depois disso vem uma boa quantidade de if e elif para verificar se palavras como "abre um video" "abre o projeto" estão no dado. Se sim o return é em relação a ação que foi identificada (abre um video para mim "action": "abrir_video". Talvez separar isso em uma função?
+		2.4. Se chegar aqui o dado não entrou em nenhum if e ele vai retornar como um dicionario com action None para a função Is_TOOL
+	3. Com o dado em mãos a função Is_TOOL (Esse nome tem que mudar) verifica se o dado tem algum action se sim
+		3.1. Ele simplesmente deixa passar com o pass.
+		3.2. Se não ele envia para o LLM verificar 100% se é um tool ou não, isso acontece com pedidos complexos. O problema é que sempre acontece mesmo quando so quero conversar com a Hana, deveria fazer algo para evitar esse gasto
+		3.3. Se existir action, ele envia o "yes" para o cerebro, era um tool e envia para o Tool_Hana (so nome redundante e ruim, mds) que vai verificar qual é o action e agir conforme isso
+		3.4. Se não ele envia um "continue" para o cerebro falando para ele continuar, era uma interação normal com a Hana
+)
+
+Is_Memory(nome de merda)(
+	1. Se o dado não era um TOOL, ele pode ser uma memoria então ele entra no Is_Memory. (O foda é que essa func sempre vai rodar e sempre vai me fazer gastar, porq eu acredito que não existe uma forma de determinar se algo é memoravel sem llm)
+		1. A função vai ja perguntar para o LLM se é memoravel (sem fallback, tenho que fazer, mas como? como determinar se algo é memoravel?)
+		2. Se o LLM determinar que essa memoria é memoravel ele retorna True. (Estou pensando seriamente em colocar a função de extrair da frase uma memoria aqui, estou gastando tokens com 2 llm, no total da 400 tokens um que me custa 300 é melhor, o problema são os erros que ele pode cometer por ter 3 funções)
+		3. Se for True ele entra no HIPOCAMPO DA HANA como forma de theading. O Hipocampo da Hana faz:
+			3.1. Usa um modelo do gpt dnv para extrair do texto uma memoria.	
+			3.2. Com a memoria extraida O Cortex_Orbito frontal determinar duas coisas:
+				3.2.1. Verifica se existe importance no retorno do llm e se é inteiro
+				3.2.2. Verifca se o retorno do importance começa com "O usuario" é um padrão do sistema
+			3.3. Se passou do cortex, vai entrar na função Reconsolidação que vai:
+				3.3.1. Verificar se tem alguma memoria literalmente identica a nova no bd
+				3.3.2. E enviar os ids, memorias e embedings que ja existem para a função Memoria_associativa
+				3.3.3. Dependendo do return da Memoria_associativa a Reconsolidação determina se a memoria vai ser "new", "refresh" ou "ignore"
+			3.4. A memoria_associativa vai fazer:
+				3.4.1. Pegar o embeding da nova memoria e comparar ele com os embeding do bd, se os embeding deram mais de 0.80, eles são bem parecidos e podem ser memorias igual, então o exemplar do bd que tem um embeding parecido é guardado em uma lista.
+				3.4.2. Depois que a lista é populada um LLM responsavel por determinar se as memorias são iguais entra em ação e determina qual vai ser a ação com essa memoria, se for duplicata, ignore, se for nova, new, se for igual mas com adendos, refresh
+		4. Se for false a função Speak_style determina tres coisas:
+			4.1. Personalidade da Hana que é fixa 100%
+			4.2. Memorias_Contexto, pega as 10 memorias com o embeding mais parecido com o input do usuario
+			4.3. Contexto, as ultimas 4 interações entre usuario e Hana
+		5. Após isso o dado chega a Hana e ela response o usuario
+		
+
+
+
+
+) pprt talvez eu deveria juntar essa parte inteira do Is_tool e Is_memory em UMA coisa tipo uma função que chama as duas, ai daria para dar um nome mais cerebral kk
+Fazendo isso percebi algumas coisas, a real é que não preciso integar tudo com a api do chatgpt, o theading literalmente existe para isso, o TOOL pode ser rodado em theading, o hipocampo ja esta rodando em theading, as coisas que preciso de velocidade real são: 1: decisão se é tool. 2: decisão se é memoria e 3: a resposta da Hana, APENAS ISSO o resto é local 100%
+
+	
+	
+	
