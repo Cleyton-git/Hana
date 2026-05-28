@@ -40,15 +40,27 @@ ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
 	10.1 - Tool abridor de projetos. FEITO
 	10.2 - Tool pesquisador de web. FEITO
 	10.3 - Tool pesquisador do youtube. FEITO
-	10.4 - Tool para tocar músicas e videos(especificamente no yt)
-	10.5 - Tool para abrir aplicativos (lol, spotify e etc)
+	10.4 - Tool para tocar músicas (Especialmente no spotify). FEITO
+	10.5 - Tool para abrir aplicativos (Navegador). FEITO
+
+11. Integrar a Hana com a api do chatgpt, ela por completo e ter noção dos gastos. FEITO
+
+12. Fazer um mini CRUD para as memorias da Hana, vai ser um terminalzinho e tal
+
+13. Criar "VISION" para a Hana
+
+14. Eu vou tentar simular VONTADE na Hana, isso foi ideia literalmente dela KKKKKKKKKKK. Ela disse "Um sistema
+de lembrete" e simplesmente pensei: "WTF, VONTADE DE FAZER ALGO?". Mlk ela pode falar cmg sem o gatilho dos
+inputs e isso vai ser do krl. A ideia é 
+	14.1.A Hana precisa de uma plataforma para rodar 24horas
+	14.2. A cada periodo de tempo o Cron vai enviar um request ESPECIFICO para essa plataforma que vai aumentar
+		14.2.1. Primeiro vou ter que criar uma nova tabela no bd que vai ser algo como Hana_fellings, sla
+		14.2.2. Vontade de falar, saudades e a vontade de falar vai ser uma conta desses dois, se ela for maior que um certo valor, eu posso enviar um prompt ESPECIFICO pro MODELO DA HANA com a personalidade dela + "user": "content": "O usuario esta a tanto tempo sem falar com a Hana" fale algo para ele se animar e falar com você. algo assim
+		14.2.3. Tbm vai verificar se eu tenho alguma TAREFA SIM MLK, UMA TAREFA que vai ser um datetime que eu vou colocar e a Hana vai me avisar que tenho que fazer tal coisa, se ela me falar, eu posso me negar oq vai aumentar o número de dias sem fazer tal coisa, E ISSO VAI VIRAR MEMORIA DA HANA. "O usuario esta sem ler por 5 dias". Soq ainda não sei mto bem como fazer a Hana citar essa fato, mas da para fazer
 	
+15. Integrar a Hana no whatsazp, ou no telegram. Vai ser mais facil de conversar com ela e  ela vai mandar audios
 
-
-11. Criar "VISION" para a Hana
-
-11. Integrar a Hana com a api do chatgpt, ela por completo e ter noção dos gastos
-
-12. Colocar a Hana para iniciar com o pc e sempre que eu apertar V eu falo com ela 
-
-
+16. O hipocampo da Hana vai receber uma atualização. A ideia aqui é pedir para o LLM retornar mais alguns dados
+	16.1. Tipos de memorias: factual, emocional, temporal ou contextual
+	16.2. O negocio é que vc provavelmente vai ter que salvar cada memoria de um jeito. Por exemplo, uma memoria temporal tem um certo tempo, e DEPENDENDO do tempo ela pode ser excluida, krl eu vou gozar o CRON pode ajudar com isso, WTF INACREDITAVEL
+	

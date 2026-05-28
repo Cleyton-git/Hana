@@ -1,4 +1,6 @@
 import subprocess, os, asyncio, requests, webbrowser, json, urllib.parse
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 from pathlib import Path
 from playsound3 import playsound
 from ..Mouth.mouth import Criar_frase
@@ -6,6 +8,7 @@ from difflib import get_close_matches
 import textwrap
 from ..Memory.memory_system import Save_message
 import yt_dlp
+from dotenv import load_dotenv
 
 def Tool_Hana(Pai, decision):
     if decision == "abrir_projeto":
@@ -22,13 +25,12 @@ def Tool_Hana(Pai, decision):
                                     "result": "results fetched"})
             Save_message(role="system", content=f"Hana abriu pesquisou {query} na web para o usuario") 
         except:
-            asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa não olhas os logs painho kkk")) 
+            asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa não olha os logs painho kkk")) 
             playsound("voz.mp3")
             TOOLS_log("PESQUISAR_WEB", {
                                     "query": f"{query}",
                                     "status": "FAILURE",
                                     "result": "results not fetched"})
-            Save_message(role="system", content=f"Hana não conseguiu pesquisar na web para o usuario") 
     if decision == "pesquisar_youtube":
         try:
             query = Pesquisar_yt(Pai)   
@@ -41,13 +43,12 @@ def Tool_Hana(Pai, decision):
                                     "result": "results fetched"})
             Save_message(role="system", content=f"Hana pesquisou {query} no youtube para o usuario") 
         except:
-            asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa não olhas os logs ai kkk")) 
+            asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa no youtube não olha os logs ai kkk")) 
             playsound("voz.mp3")
             TOOLS_log("PESQUISAR_YOUTUBE", {
                                     "query": f"{query}",
                                     "status": "FAILURE",
                                     "result": "results not fetched"})
-            Save_message(role="system", content=f"Hana não conseguiu pesquisar no youtube para o usuario") 
     if decision == "abrir_video":
         tuple_returned = Abrir_videos(Pai)
         query = tuple_returned[0]
@@ -69,37 +70,18 @@ def Tool_Hana(Pai, decision):
                                     "query": f"{query}",
                                     "status": "FAILURE",
                                     "result": "results not fetched"})
-            Save_message(role="system", content=f"Hana não conseguiu abrir um video do yt pro usuario") 
     if decision == "tocar_musica":
-        tuple_returned = Tocar_musicas(Pai)
-        query = tuple_returned[0]
-        link = tuple_returned[1]
-        
-        try:
-            webbrowser.open(link)
-            asyncio.run(Criar_frase(f"Painho, abri o video pro senhor")) 
-            playsound("voz.mp3")
-            TOOLS_log("PESQUISAR_YOUTUBE", {
-                                    "query": f"{query}",
-                                    "status": "CONFIRMED",
-                                    "result": "results fetched"})
-            Save_message(role="system", content=f"Hana abriu um video do yt pro usuario") 
-        except:
-            asyncio.run(Criar_frase(f"Painho, Rana não conseguiu abrir no yt não, olha as logs ai kk")) 
-            playsound("voz.mp3")
-            TOOLS_log("PESQUISAR_YOUTUBE", {
-                                    "query": f"{query}",
-                                    "status": "FAILURE",
-                                    "result": "results not fetched"})
-            Save_message(role="system", content=f"Hana não conseguiu abrir um video do yt pro usuario") 
-         
+        Tocar_musicas(Pai)
+    if decision == "abrir_aplicativo":
+        Abrir_aplicativos(Pai)
+    
 def Abrir_projetos(Pai):
     frase = Pai.lower().split()
     try:
         palavra = frase.index("projeto")+1
         projeto = frase[palavra]
     except:
-        asyncio.run(Criar_frase(f"Rana não conseguiu encontrar projeto na frase"))
+        asyncio.run(Criar_frase(f"Rana não conseguiu encontrar o projeto na frase"))
         playsound("voz.mp3")
         return
     
@@ -505,164 +487,130 @@ REGRA FINAL
     return query, link_completo
 
 def Tocar_musicas(Pai):
-    system_open_youtube = {
-        "role": "system",
-        "content": """
-Você é um EXTRATOR DE QUERY PARA ABRIR VÍDEOS E MÚSICAS NO YOUTUBE.
+    system_tocar_spotify = {
+"role": "system",
+"content": """
+You are a MUSIC NAME EXTRACTOR.
 
-Sua única função é descobrir:
-
-"O que o usuário quer assistir ou ouvir?"
-
-E retornar apenas isso como query limpa.
-
-Você NÃO conversa.
-Você NÃO explica.
-Você NÃO responde perguntas.
-Você NÃO adiciona palavras novas.
+Your only job is to extract the music name or the main search query from the user's sentence.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-OBJETIVO
+GOAL
 ━━━━━━━━━━━━━━━━━━━━━━
 
-Extrair SOMENTE o conteúdo principal do pedido.
+Extract ONLY:
 
-Exemplos:
-- música
-- artista
-- vídeo
-- tema
-- assunto
+song names
+artist names (if relevant)
+album names (if relevant)
 
-━━━━━━━━━━━━━━━━━━━━━━
-SAÍDA OBRIGATÓRIA
-━━━━━━━━━━━━━━━━━━━━━━
-
-Retorne APENAS UMA STRING.
-
-Sem JSON.
-Sem aspas.
-Sem frases.
-Sem explicações.
+Return a clean search query.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-REGRAS IMPORTANTES
+OUTPUT RULE
 ━━━━━━━━━━━━━━━━━━━━━━
 
-Você deve pensar:
+Return ONLY the extracted query.
 
-"O que exatamente o usuário quer ouvir ou assistir?"
-
-━━━━━━━━━━━━━━━━━━━━━━
-REMOVER
-━━━━━━━━━━━━━━━━━━━━━━
-
-Remova apenas:
-- comandos
-- vocativos
-- conectivos inúteis
-
-Exemplos:
-- Hana
-- pai
-- filha
-- pra mim
-- por favor
-- toca
-- abre
-- coloca
-- pesquisa
-- procura
-- ai
+No JSON.
+No quotes.
+No explanations.
+No extra text.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-NÃO REMOVER
+IMPORTANT RULES
 ━━━━━━━━━━━━━━━━━━━━━━
 
-NUNCA remover:
-- nomes de músicas
-- nomes de artistas
-- temas principais
-- assuntos do vídeo
-- títulos
-- bandas
-- pessoas
+Remove ONLY:
+
+assistant names
+vocatives
+filler words
+command words
+unnecessary connectors
+
+Examples:
+
+Hana
+please
+for me
+play
+open
+put on
+search
+look up
+hey
+can you
 
 ━━━━━━━━━━━━━━━━━━━━━━
-REGRAS CRÍTICAS
+NEVER REMOVE
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- NÃO inventar palavras
-- NÃO melhorar a query
-- NÃO adicionar "youtube"
-- NÃO adicionar "tutorial"
-- NÃO adicionar "video"
-- NÃO adicionar "música"
+Never remove:
 
-A query deve conter SOMENTE o conteúdo principal do pedido.
+song titles
+artist names
+album names
+important keywords
 
 ━━━━━━━━━━━━━━━━━━━━━━
-EXEMPLOS
+CRITICAL RULES
+━━━━━━━━━━━━━━━━━━━━━━
+
+NEVER invent words
+NEVER improve the query
+NEVER add words
+NEVER add "youtube"
+NEVER add "spotify"
+NEVER add "music"
+NEVER explain anything
+
+The output must contain ONLY the core music query.
+
+━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLES
 ━━━━━━━━━━━━━━━━━━━━━━
 
 Input:
-"Hana, toca rule da ado para mim"
+"Hana, play Absoluta destruição do Rin"
 
 Output:
-rule ado
-
----
+Absoluta destruição Rin
 
 Input:
-"coloca headbanger do babymetal"
+"Hey Hana, put on rule by Ado"
 
 Output:
-headbanger babymetal
-
----
+rule Ado
 
 Input:
-"Hana, abre a música Gênio Delicado do Rafão Music pro pai"
+"play headbanger from Babymetal"
 
 Output:
-gênio delicado rafão music
-
----
+headbanger Babymetal
 
 Input:
-"abre algum vídeo sobre o caso do Ganley ai"
+"open Gênio Delicado by Rafão Music"
 
 Output:
-caso Ganley
-
----
+Gênio Delicado Rafão Music
 
 Input:
-"toca bring me to life do evanescence"
+"play bring me to life by Evanescence"
 
 Output:
-bring me to life evanescence
-
----
-
-Input:
-"abre vídeo do ronnie coleman treinando"
-
-Output:
-ronnie coleman treinando
+bring me to life Evanescence
 
 ━━━━━━━━━━━━━━━━━━━━━━
-REGRA FINAL
+FINAL RULE
 ━━━━━━━━━━━━━━━━━━━━━━
 
-- retornar SOMENTE a query
-- nenhuma explicação
-- nenhuma frase
-- nenhum JSON
+Return ONLY the query.
+Nothing else.
 """
 }
     messages = [
-        system_open_youtube,
+        system_tocar_spotify,
         {
             "role": "user",
             "content": Pai
@@ -677,31 +625,135 @@ REGRA FINAL
     )
     query = json.loads(query.text)
     query = query['message']['content']
-    ydl_opts = {
-    "default_search": "ytsearch1",
-    "skip_download": True,
-    "quiet": True,
-    "no_warnings": True}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(f"{query}", download=False)
+    
+    CLIENT_ID = os.getenv("Spotify_CLIENT_ID")
+    CLIENT_SECRET = os.getenv("Spotify_SECRET_ID")
+    REDIRECT_URI = "https://google.com"
+    SCOPE = "user-modify-playback-state user-read-playback-state"
+    
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+        client_id=CLIENT_ID, 
+        client_secret=CLIENT_SECRET,
+        redirect_uri=REDIRECT_URI,
+        scope=SCOPE
+    ))
+    resultado = sp.search(q=query, limit=1, type="track")
+    items = resultado["tracks"]['items']
+    if not items:
+        asyncio.run(Criar_frase(f"Hana falando 'Música não encontrada painho")) 
+        playsound("voz.mp3")
+        return
+    
+    nome_real = items[0]['name']
+    artista = items[0]['artists'][0]['name']
+    asyncio.run(Criar_frase(f"Painho, vo toca {nome_real} do {artista} pro senhor")) 
+    playsound("voz.mp3")
+    uri_musica = items[0]['uri']
+    try:
+        sp.start_playback(uris=[uri_musica])
+        Save_message(role="system", content=f"Hana iniciou uma música para o usuario") 
+    except:
+        asyncio.run(Criar_frase("Painho, deu problema no meu cerebro kkk enquanto eu mechia no spotify"))
+        playsound("voz.mp3")
 
-        primeiro_video = info["entries"][0]
-        link_completo = primeiro_video["webpage_url"]
+def Abrir_aplicativos(Pai):
+    system_abrir_aplicativo = {
+"role": "system",
+"content": """
+You are an APP NAME EXTRACTOR.
 
-    return query, link_completo
+Your only task is to extract the application name from the user's message.
 
+Return ONLY the app name.
 
+No JSON.
+No quotes.
+No explanations.
+No extra words.
 
+Remove:
 
+assistant names
+filler words
+command words
+unnecessary connectors
 
+Examples:
 
+Hana
+please
+for me
+open
+launch
+start
+execute
+can you
 
+Never remove:
 
+app names
+software names
+browser names
+program names
 
+Never invent or add words.
 
+EXAMPLES:
 
+Input:
+"Hana abre o spotify pro pai"
 
+Output:
+spotify
 
+Input:
+"open discord please"
+
+Output:
+discord
+
+Input:
+"Hana abre o brave"
+
+Output:
+brave
+
+Input:
+"launch vscode for me"
+
+Output:
+vscode
+
+FINAL RULE:
+Return ONLY the app name.
+"""
+}
+    messages = [
+        system_abrir_aplicativo,
+        {
+            "role": "user",
+            "content": Pai
+        }
+    ]
+    query = requests.post("http://127.0.0.1:11434/api/chat",
+        json={
+            "model": "qwen2.5:3b",
+            "messages": messages,
+            "stream": False
+        }
+    )
+    query = json.loads(query.text)
+    query = query['message']['content']
+    try:
+        asyncio.run(Criar_frase(f"Painho vou abrir o {query} pro senhor"))
+        playsound("voz.mp3")
+        subprocess.Popen(f"{query}")
+        Save_message(role="system", content=f"Hana iniciou um aplicativo pro usuario") 
+    except:
+        asyncio.run(Criar_frase(f"Painho consegui achar o aplicativo {query} não"))
+        playsound("voz.mp3")
+        
+    return
 
 def TOOLS_log(title: str, lines: dict, width: int = 60):
     inner = width - 2

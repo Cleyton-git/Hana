@@ -7,11 +7,11 @@ import textwrap
 LARGURA = 54
 fs = 16000
 audio_data = []
-model = WhisperModel(
-        "medium",
-        device="cpu",
-        compute_type="int8"
-    )
+#model = WhisperModel(
+#        "medium",
+#        device="cpu",
+#        compute_type="int8"
+#    )
 
 def Fala_Pai():
     while True:

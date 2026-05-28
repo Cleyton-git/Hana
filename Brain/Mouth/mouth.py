@@ -24,7 +24,7 @@ def Mouth_Hana(msg):
                         json={
                           "model": "gpt-5-nano",
                           "messages": msg,
-                          "max_completion_tokens": 1000,
+                          "max_completion_tokens": 2000,
                           },
                       )
 
