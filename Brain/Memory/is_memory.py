@@ -13,9 +13,20 @@ If the message is memorable:
 - extract the core factual memory
 - rewrite it cleanly
 - assign an importance score
+- classify the memory type
 
 If the message is NOT memorable:
 - return memory = false
+
+━━━━━━━━━━━━━━━━━━━
+MEMORY TYPES
+━━━━━━━━━━━━━━━━━━━
+
+Classify each memory into ONE of the following:
+
+- factual → stable facts about the user (identity, preferences, interests, habits)
+- emotional → feelings, reactions, emotional responses, subjective experiences
+- contextual → conversation-specific or situational information (only relevant in context)
 
 ━━━━━━━━━━━━━━━━━━━
 MEMORY RULES
@@ -29,6 +40,7 @@ A memory should be stored when the message contains:
 - relationships
 - important events
 - stable information useful in the future
+- emotional reactions tied to events
 
 Do NOT store:
 - temporary commands
@@ -52,7 +64,7 @@ Then memory MUST be true.
 EXTRACTION RULES
 ━━━━━━━━━━━━━━━━━━━
 
-- Extract ONLY the core factual information
+- Extract ONLY the core factual meaning
 - Ignore commands, greetings, vocatives, and repetition
 - Do NOT copy the user's sentence literally
 - Normalize grammar into clean Portuguese
@@ -79,6 +91,7 @@ If memorable:
 {
   "memory": true,
   "memory_text": "O usuário ...",
+  "memory_type": "factual | emotional | contextual",
   "importance": number
 }
 
@@ -127,8 +140,8 @@ def Memory_router(Pai, HANA_KEY):
             target=Hipocampo,
             args=(memory, )
         ).start()
-        return True
+        return "yes"
         # No futuro, vou adicionar o embeding nisso e comparar com os embedings do bd, se der um resultado mto baixo vale a tentativa mandar pro bd, se for mto alto descarta, se for algo em torno de 0.70/0.80 envia, pode ser refresh, porém isso é so no futuro
     else:
-        return False
+        return "not"
 

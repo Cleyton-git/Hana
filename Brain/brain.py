@@ -6,7 +6,7 @@ from .Tools.is_tool import Tool_router
 from .Memory.is_memory import Memory_router
 from dotenv import load_dotenv
 from .Cortex_Sensorial.contexsensorial import Cortex_sensorial
-from .Tecnico.hana_log import Token_log
+from .Tecnico.hana_log import Token_log, Log_Brain, end_interaction_log
 
 load_dotenv()
 HANA_KEY = os.getenv("Hana_KEY")
@@ -15,31 +15,40 @@ TERMINAL_MODE = True
 
 def Brain_Hana(interacao):
     Pai = Cortex_sensorial(TERMINAL_MODE, interacao)
+    Log_Brain(interacao, "CORTEX_sensorial", "INPUT", {"pai": Pai})
 
-    is_tool = Tool_router(Pai, HANA_KEY) 
-    if is_tool != "continue":   
-        linha(f"TOOL | {is_tool['tool']['action']}")
+    is_tool = Tool_router(Pai, HANA_KEY, interacao) 
+    if is_tool != "not":   
+        linha(f"TOOL | {is_tool['tool']}")
         print("╚" + "═" * (LARGURA + 2) + "╝")
+        Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": "yes"})
+        end_interaction_log("Logs/hana_brain.jsonl")
         return
+    Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
     
     is_memory = Memory_router(Pai, HANA_KEY)
-    linha(f"TOOL | False")
+    Log_Brain(interacao, "MEMORY_ROUTER", "IS_MEMORY?", {"memory": is_memory})
+    linha(f"TOOL | not")
     linha(f"HIPOCAMPO | {is_memory}")
-    Hana = Making_Hana(Pai)
-    
+    Hana = Making_Hana(Pai, interacao)
     try:   
         linha(f"SPEAK    | {Pai}")
         resposta = Mouth_Hana(Hana)
         if resposta:
-            linha(f"RESPONSE | {resposta}")
+            linha(f"RESPONSE | {resposta[0]}")
+            Log_Brain(interacao, 'response', "Resposta da Hana", {"Resposta": resposta[0]})
+            Log_Brain(interacao, 'reasoning', "Razão da resposta", {"Resposta": resposta[1]})
+            # Eu gostaria de aqui chamar a func do log, apenas enviando a interação por parametro e o resto dos dados
             Save_message(role="user", content=Pai) 
-            Save_message(role="assistant", content=resposta)
+            Save_message(role="assistant", content=resposta[0])
     except Exception as e:
         traceback.print_exc()
         print("error log -> ", e)
     print("╚" + "═" * (LARGURA + 2) + "╝")
+    
+    end_interaction_log("Logs/hana_brain.jsonl")
  
-def Making_Hana(Pai):
+def Making_Hana(Pai, interacao):
     system_style_decider = {
     "role": "system",
     "content": """
@@ -103,8 +112,10 @@ Return JSON only.
     ).json()['embedding']
     
     Hana_personalidade = Personalidade()
+    Log_Brain(interacao, "Personalidade", "Personalidade enviada", {"Personalidade": Hana_personalidade})
     Hana_Contexto = Get_contexto()
     Hana_memorias_contextuais = Get_memorys_context(embe_input)
+    Log_Brain(interacao, "Memorias contextuais", "Memorias contextuais enviadas", {"Memorias": [Hana_memorias_contextuais]})
     Comportamento_Hana = []
     
     if how_hana_speak["speech_mode"] == "minimal":
@@ -119,27 +130,32 @@ Return JSON only.
         Comportamento_Hana.append("\nFale de forma neutra e curta")
     else:
         Comportamento_Hana.append("\nFale de forma bem fria e distante.")
+
+    Log_Brain(interacao, "Comportamento", "Comportamento enviado", {"Comportamento": [Comportamento_Hana]})
     
     Hana = [
         {
             "role": "system",
-            "content": Hana_personalidade
+            "content": f"""
+### PERSONALIDADE 
+{Hana_personalidade}
+            """
         },
         {
             "role": "system",
-            "content": Hana_memorias_contextuais
+            "content": f"""
+### MEMÓRIAS
+{Hana_memorias_contextuais}"""
         },
         {
             "role": "system",
-            "content": "\n".join(Comportamento_Hana)
+            "content": f"""
+### COMPORTAMENTO
+{chr(10).join('- ' + c.strip() for c in Comportamento_Hana)}"""
         }
-        #{
-        #    "role": "system",
-        #    "content": "Sentimentos da Hana!"
-        #}
-        
     ]
     Hana.extend(Hana_Contexto[-4:])
+    Log_Brain(interacao, "Contexto", "Contexto enviado", {"Contexto": [Hana_Contexto[-4:]]})
     Hana.append({"role": "user", "content": Pai})
     return Hana
 

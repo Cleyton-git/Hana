@@ -1,54 +1,40 @@
-import subprocess, os, asyncio, requests, webbrowser, json, urllib.parse
-import spotipy
+import subprocess, os, asyncio, requests, webbrowser, json, urllib.parse, sys, textwrap, spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from pathlib import Path
 from playsound3 import playsound
 from ..Mouth.mouth import Criar_frase
 from difflib import get_close_matches
-import textwrap
 from ..Memory.memory_system import Save_message
 import yt_dlp
-from dotenv import load_dotenv
+from ..Tecnico.hana_log import Log_Tool
 
-def Tool_Hana(Pai, decision):
+def Tool_Hana(Pai, decision, interacao):
     if decision == "abrir_projeto":
-        Abrir_projetos(Pai)
+        Abrir_projetos(Pai, interacao)
     if decision == "pesquisar_web":
         try:
             query = Pesquisar_web(Pai)   
             asyncio.run(Criar_frase(f"Painho, pesquisei {query} pro senhor")) 
             playsound("voz.mp3")
             webbrowser.open(f"https://www.google.com/search?q={query}")
-            TOOLS_log("PESQUISAR_WEB", {
-                                    "query": f"{query}",
-                                    "status": "CONFIRMED",
-                                    "result": "results fetched"})
+            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisar_web", result="success")
             Save_message(role="system", content=f"Hana abriu pesquisou {query} na web para o usuario") 
-        except:
+        except Exception as e:
             asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa não olha os logs painho kkk")) 
             playsound("voz.mp3")
-            TOOLS_log("PESQUISAR_WEB", {
-                                    "query": f"{query}",
-                                    "status": "FAILURE",
-                                    "result": "results not fetched"})
+            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisar_web", result=f"fail. Exception: {e}")
     if decision == "pesquisar_youtube":
         try:
             query = Pesquisar_yt(Pai)   
             asyncio.run(Criar_frase(f"Painho, pesquisei {query} pro senhor")) 
             playsound("voz.mp3")
             webbrowser.open(f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}")
-            TOOLS_log("PESQUISAR_YOUTUBE", {
-                                    "query": f"{query}",
-                                    "status": "CONFIRMED",
-                                    "result": "results fetched"})
+            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisa_youtube", result="success")
             Save_message(role="system", content=f"Hana pesquisou {query} no youtube para o usuario") 
-        except:
+        except Exception as e:
             asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa no youtube não olha os logs ai kkk")) 
             playsound("voz.mp3")
-            TOOLS_log("PESQUISAR_YOUTUBE", {
-                                    "query": f"{query}",
-                                    "status": "FAILURE",
-                                    "result": "results not fetched"})
+            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisa_youtube", result=f"fail. Exception {e}")
     if decision == "abrir_video":
         tuple_returned = Abrir_videos(Pai)
         query = tuple_returned[0]
@@ -58,29 +44,29 @@ def Tool_Hana(Pai, decision):
             webbrowser.open(link)
             asyncio.run(Criar_frase(f"Painho, abri o video pro senhor")) 
             playsound("voz.mp3")
-            TOOLS_log("PESQUISAR_YOUTUBE", {
-                                    "query": f"{query}",
-                                    "status": "CONFIRMED",
-                                    "result": "results fetched"})
+            Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_video", result="success")
             Save_message(role="system", content=f"Hana abriu um video do yt pro usuario") 
-        except:
+        except Exception as e:
             asyncio.run(Criar_frase(f"Painho, Rana não conseguiu abrir no yt não, olha as logs ai kk")) 
             playsound("voz.mp3")
-            TOOLS_log("PESQUISAR_YOUTUBE", {
-                                    "query": f"{query}",
-                                    "status": "FAILURE",
-                                    "result": "results not fetched"})
+            Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_video", result=f"fail. Exception {e}")
     if decision == "tocar_musica":
-        Tocar_musicas(Pai)
+        Tocar_musicas(Pai, interacao)
     if decision == "abrir_aplicativo":
-        Abrir_aplicativos(Pai)
+        Abrir_aplicativos(Pai, interacao)
+    if decision == "abrir_terminal_memorias":
+        ROOT = os.getcwd()
+        comando = (f'start cmd /k ' f'"cd /d "{ROOT}" && {sys.executable} -m Brain.Memory.Terminal_memorias.terminal"')
+        subprocess.Popen(comando, shell=True)
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_terminal_memorias", result="success")
+        
     
-def Abrir_projetos(Pai):
+def Abrir_projetos(Pai, interacao):
     frase = Pai.lower().split()
     try:
         palavra = frase.index("projeto")+1
         projeto = frase[palavra]
-    except:
+    except Exception as e:
         asyncio.run(Criar_frase(f"Rana não conseguiu encontrar o projeto na frase"))
         playsound("voz.mp3")
         return
@@ -92,6 +78,7 @@ def Abrir_projetos(Pai):
         lista_pastas.append(pastas.name)
     match = get_close_matches(projeto.lower(), lista_pastas, n=1, cutoff=0.6)
     if not match:
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_projeto", result="fail")
         asyncio.run(Criar_frase(f"Rana não encontrou o projeto {projeto}"))
         playsound("voz.mp3")
         return
@@ -105,16 +92,12 @@ def Abrir_projetos(Pai):
         asyncio.run(Criar_frase(f"Rana abrindo projeto {projeto}"))
         playsound("voz.mp3")
         subprocess.Popen([vs_code, caminho_projeto], shell=True)
-        TOOLS_log("ABRIR_PROJETO", {"status": "CONFIRMED",
-                                    "path": f"{caminho_projeto}",
-                                    "RESULT": "OPENED"})
-    except:
-        asyncio.run(Criar_frase(f"Rana não encontrou o projeto..."))
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_projetos", result="success")
+    except Exception as e:
+        asyncio.run(Criar_frase(f"Rana não conseguiu abrir o projeto não ve os logs ai kkk.."))
         playsound("voz.mp3")
-        TOOLS_log("ABRIR_PROJETO", {"status": "FAILURE",
-                                    "path": f"{caminho_projeto}",
-                                    "RESULT": "NOT FOUND"})
-         
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_projeto", result=f"fail. Exception: {e}")
+
 def Pesquisar_web(Pai):
     system_search = {
   "role": "system",
@@ -486,7 +469,7 @@ REGRA FINAL
 
     return query, link_completo
 
-def Tocar_musicas(Pai):
+def Tocar_musicas(Pai, interacao):
     system_tocar_spotify = {
 "role": "system",
 "content": """
@@ -642,6 +625,7 @@ Nothing else.
     if not items:
         asyncio.run(Criar_frase(f"Hana falando 'Música não encontrada painho")) 
         playsound("voz.mp3")
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="tocar_musica", result="fail")
         return
     
     nome_real = items[0]['name']
@@ -652,11 +636,13 @@ Nothing else.
     try:
         sp.start_playback(uris=[uri_musica])
         Save_message(role="system", content=f"Hana iniciou uma música para o usuario") 
-    except:
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="tocar_musica", result="success")
+    except Exception as e:
         asyncio.run(Criar_frase("Painho, deu problema no meu cerebro kkk enquanto eu mechia no spotify"))
         playsound("voz.mp3")
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="tocar_musica", result=f"fail. Exception: {e}")
 
-def Abrir_aplicativos(Pai):
+def Abrir_aplicativos(Pai, interacao):
     system_abrir_aplicativo = {
 "role": "system",
 "content": """
@@ -749,10 +735,11 @@ Return ONLY the app name.
         playsound("voz.mp3")
         subprocess.Popen(f"{query}")
         Save_message(role="system", content=f"Hana iniciou um aplicativo pro usuario") 
-    except:
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_aplicativos", result="success")
+    except Exception as e:
         asyncio.run(Criar_frase(f"Painho consegui achar o aplicativo {query} não"))
         playsound("voz.mp3")
-        
+        Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_aplicativos", result=f"fail. Exception {e}")
     return
 
 def TOOLS_log(title: str, lines: dict, width: int = 60):

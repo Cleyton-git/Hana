@@ -31,10 +31,13 @@ def Mouth_Hana(msg):
   data = response.json()
   usage = data['usage']
   Token_log(model="gpt-5-nano", usage=usage, func="Mouth")
-  content = data['choices'][0]["message"]["content"]
-  asyncio.run(Criar_frase(content))
+  content = json.loads(data['choices'][0]["message"]["content"])
+  response = content['response']
+  reasoning = content['reasoning']
+  
+  asyncio.run(Criar_frase(response))
   playsound("voz.mp3")
-  return content
+  return response, reasoning
 
 
 def Ia_duplicy_verification(msg, model):

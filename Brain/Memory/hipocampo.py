@@ -1,7 +1,7 @@
 import requests, json, textwrap
-from Brain.Memory.memory_system import Save_memory, Get_memorys_ids, Update_memory
+from Brain.Memory.memory_system import Save_memory, Get_memorys_ids, Update_memory, Get_memorys_by_type
 import numpy as np
-from ..Tecnico.hana_log import HIPOCAMPO_file_log
+from ..Tecnico.hana_log import HIPOCAMPO_file_log, end_interaction_log
 from ..Mouth.mouth import Ia_duplicy_verification
 from datetime import datetime
 
@@ -20,6 +20,8 @@ def Hipocampo(memoria):
         Memoria_console("IGNORE", memoria['memory_text'])
     else:
       pass
+    end_interaction_log("Logs/Hipocampo.log")
+  
   
 def Cortex_Orbitofrontal(memoria):
   if not isinstance(memoria.get("importance"), int): # ve se a memoria vem com importance
@@ -35,10 +37,10 @@ def Reconsolidacao(memoria):
   memorias = [mem[1] for mem in Get_memorys_ids()]
   for c in memorias: # Ve se tem uma memoria IDENTICA no BD
     if memoria['memory_text'] == c:
-      HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", { "status": "MEMORIA IDENTICA"})
+      HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", {"status": "UNSAVED", "reasoning": "memoria identica"})
       return "ignore"
-  ids_e_memorias = Get_memorys_ids()
-  response = Memoria_associativa(memoria, ids_e_memorias)
+  old_memorias = Get_memorys_by_type(memoria['memory_type'])
+  response = Memoria_associativa(memoria, old_memorias)
   if response == "new":
     return "new"
   elif response == "refresh":
@@ -56,22 +58,27 @@ def Memoria_associativa(new_memoria, old_memorias):
           "prompt": new_memoria['memory_text']
     }
   ).json()['embedding']
-  for mem_id, mem_old, mem_embe in old_memorias: 
+  if len(old_memorias) == 0:
+    Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], memory_type=new_memoria['memory_type'], embedding=emb1_new)
+    HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", { "status": "SAVED", "reasoning": "new memory detected"})
+    return "new"
+  for mem_id, mem_old, mem_embe, mem_type in old_memorias: 
     mem_embe = json.loads(mem_embe)
     score = cosine(emb1_new, mem_embe)
-    HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_EMBEDING", {"NEW_MEMORY": f"{new_memoria['memory_text']}", "OLD_MEMORY": f"{mem_old}", "score": score})
     if score > 0.70:
       candidatos.append({"id": mem_id,"memory": mem_old,"score": score})
-    if score > 0.99:
-      HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_END_PREMATURE", { "status": "EMBEDING IDENTICO"})
-      return "ignore"
+    #if score > 0.99:
+    #  HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_END_PREMATURE", { "status": "EMBEDING IDENTICO"})
+    #  return "ignore"
       
   candidatos.sort(key=lambda x: x["score"], reverse=True)
   if len(candidatos) == 0:
     HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_END_PREMATURE", {"status": "0 CANDIDATOS"})
-    Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], embedding=emb1_new)
+    Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], memory_type=new_memoria['memory_type'], embedding=emb1_new)
     return "new"
   top = candidatos[:3]
+  HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_CANDIDATOS", {"NEW_MEMORY": f"{new_memoria['memory_text']}", "Candidatos": f"{candidatos}"})
+  
   
   decisions = []
   for candidate in top:
@@ -203,16 +210,14 @@ Responda APENAS com JSON válido.
       "candidate": candidate,
       "decision": decision
     })
-    HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_LLM", {"candidates": len(candidatos), "decision": decisions})
-    
   
   for item in decisions:
     candidate = item['candidate']
     action = item["decision"]["action"]
     
     if action == "refresh":
-      HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_FINAL", {"status": "refresh"})
-      Update_memory(candidate['id'], new_memoria['memory_text'], new_memoria['importance'], embedding=emb1_new)
+      HIPOCAMPO_file_log("STATUS_REFRESH", {"new_memory": new_memoria['memory_text'], "Old_memory": candidate})
+      Update_memory(candidate['id'], new_memoria['memory_text'], new_memoria['importance'], memory_type=new_memoria['memory_type'], embedding=emb1_new)
       return "refresh"
   
   for item in decisions:
@@ -220,25 +225,23 @@ Responda APENAS com JSON válido.
     action = item["decision"]["action"]
     
     if action == "replace":
-      HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_FINAL", {"status": "replace"})
-      Update_memory(candidate['id'], new_memoria['memory_text'], new_memoria['importance'], embedding=emb1_new)
+      HIPOCAMPO_file_log("STATUS_REPLACE", {"new_memory": new_memoria['memory_text'], "Old_memory": candidate})
+      Update_memory(candidate['id'], new_memoria['memory_text'], new_memoria['importance'], memory_type=new_memoria['memory_type'], embedding=emb1_new)
       return "refresh"
   
   for item in decisions:
-    
-    candidate = item['candidate']
     action = item["decision"]["action"]
     if action == "new":
-      HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_FINAL", {"status": "new"})
-      Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], embedding=emb1_new)
+      HIPOCAMPO_file_log("STATUS_NEW", {"new_memory": new_memoria['memory_text']})
+      Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], memory_type=new_memoria['memory_type'], embedding=emb1_new)
       return "new"
   
   for item in decisions:
-    candidate = item['candidate']
     action = item["decision"]["action"]
     if action == "duplicate":
-      HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_FINAL", {"status": "duplicate"})
+      HIPOCAMPO_file_log("STATUS_DUPLICATE", {"new_memory": new_memoria['memory_text']})
       return "ignore"
+    
     
 def cosine(a, b):
     a = np.array(a)

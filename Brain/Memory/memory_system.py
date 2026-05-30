@@ -25,6 +25,7 @@ def create_tables():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             memory TEXT,
             importance INTEGER,
+            memory_type TEXT,
             embedding float,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
         """)
@@ -71,9 +72,6 @@ def Get_memorys():
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
-    #cursor.execute(
-    #    f"SELECT * from memorias WHERE category IN ('comportamento', 'identidade') ORDER BY id ASC"
-    #)
     cursor.execute(
         f"SELECT * from memorias ORDER BY id ASC"
     )
@@ -116,15 +114,15 @@ def Save_message(role, content):
     )
     con.commit()
 
-def Save_memory(memory, importance, embedding):
+def Save_memory(memory, importance, memory_type, embedding):
     import json
     embedding_json = json.dumps(embedding)
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute(
-        f"INSERT INTO memorias (memory, importance, embedding) VALUES(?, ?, ?)",
-        (memory, importance, embedding_json)
+        f"INSERT INTO memorias (memory, importance, memory_type, embedding) VALUES(?, ?, ?, ?)",
+        (memory, importance, memory_type, embedding_json)
     )
     con.commit()
     con.close()
@@ -147,7 +145,16 @@ def Get_memorys_ids():
     rows = cursor.fetchall()
     return rows
 
-def Update_memory(mem_id, new_memory, importance=None, embedding=None):
+def Get_memorys_by_type(type):
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
+    cursor = con.cursor()
+    cursor.execute(
+        f"SELECT id, memory, embedding, memory_type from memorias WHERE memory_type = '{type}' ORDER BY id ASC"
+    )
+    rows = cursor.fetchall()
+    return rows
+
+def Update_memory(mem_id, new_memory, memory_type, importance=None, embedding=None):
     import json
     embedding_json = json.dumps(embedding)
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
@@ -157,11 +164,12 @@ def Update_memory(mem_id, new_memory, importance=None, embedding=None):
         UPDATE memorias
         SET memory = ?,
             importance = COALESCE(?, importance),
+            memory_type = COALESCE(?, memory_type),
             embedding = COALESCE(?, embedding)
         WHERE id = ?
     """
 
-    cursor.execute(query, (new_memory, importance, embedding_json, mem_id))
+    cursor.execute(query, (new_memory, importance, memory_type, embedding_json, mem_id))
 
 
     con.commit()

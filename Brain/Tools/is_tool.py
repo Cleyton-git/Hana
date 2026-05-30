@@ -3,11 +3,9 @@ import requests, json, threading
 from ..Tecnico.hana_log import Token_log
 from .tools import Tool_Hana
 
-
-
-def Tool_router(Pai, HANA_KEY):
+def Tool_router(Pai, HANA_KEY, interacao):
     is_tool = Fast_Filter(Pai)
-    options = ["tocar_musica", "pesquisar_youtube", "pesquisar_web", "abrir_projeto"]
+    options = ["tocar_musica", "pesquisar_youtube", "pesquisar_web", "abrir_projeto", 'abrir_terminal_memorias']
     if is_tool['tool']['action'] in options:
         pass # LOGAR ESSE DADO AQUI, DPS OU NEM, SLA PORRA
     else:
@@ -31,7 +29,7 @@ Return ONLY:
 
 or
 
-{"tool"}
+{"tool": None}
 
 RULES:
 
@@ -72,7 +70,7 @@ EXAMPLES:
 → {"tool":{"action":"abrir_aplicativo"}}
 
 "você gosta de música?"
-→ {"tool"}
+→ {"tool": None}
 
 ONLY JSON.
 """
@@ -97,13 +95,12 @@ ONLY JSON.
         Token_log(model="gpt-5-nano", usage=usage, func="Tool")
         content = data['choices'][0]["message"]["content"]
         is_tool = json.loads(content)
-        is_tool = is_tool.get("tool")
-    if is_tool and is_tool.get("action"):
+    if is_tool.get('tool') is not None:
         threading.Thread(target=Tool_Hana,
-                         args=(Pai, is_tool['tool']['action'])).start()
+                         args=(Pai, is_tool['tool']['action'], interacao)).start()
         #Tool_Hana(Pai, is_tool['tool']['action'])
         return is_tool
-    return "continue"
+    return "not"
 
 def Fast_Filter(Pai):
     is_tool = {"tool": {"action": None}}
@@ -120,7 +117,8 @@ def Fast_Filter(Pai):
         "abrir_video": ["abre esse video", "abre esse vídeo", "abre um video", "abre um vídeo"],
         "pesquisar_web": ["pesquisa para mim", "pesquisa sobre", "pesquisa isso", "pesquisa ai sobre"],
         "abrir_projeto": ["abre o projeto"],
-        "abrir_aplicativo": ['abre o aplicativo', "abre o app"]
+        "abrir_aplicativo": ['abre o aplicativo', "abre o app"],
+        "abrir_terminal_memorias": ['abrir terminal de memorias', 'abrir terminal memoria']
     }
     if any(gatilho in texto for gatilho in LOCAL_ACTION_MAP['tocar_musica']):
         is_tool['tool']['action'] = "tocar_musica"
@@ -136,5 +134,8 @@ def Fast_Filter(Pai):
         return is_tool
     elif any(gatilho in texto for gatilho in LOCAL_ACTION_MAP['abrir_projeto']):
         is_tool['tool']['action'] = "abrir_projeto"
+        return is_tool
+    elif any(gatilho in texto for gatilho in LOCAL_ACTION_MAP['abrir_terminal_memorias']):
+        is_tool['tool']['action'] = "abrir_terminal_memorias"
         return is_tool
     return is_tool
