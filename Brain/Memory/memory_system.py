@@ -32,7 +32,7 @@ def create_tables():
 
     con.commit()
 
-def Get_memorys_context(embe):
+def Get_memorys_context(entity):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
@@ -40,32 +40,13 @@ def Get_memorys_context(embe):
     #    f"SELECT * from memorias WHERE category IN ('comportamento', 'identidade') ORDER BY id ASC"
     #)
     cursor.execute(
-        f"SELECT * from memorias ORDER BY id ASC"
+        "SELECT memory FROM memorias WHERE entity = ? ORDER BY id ASC",
+        (entity,)
     )
     rows = cursor.fetchall()
-    
-    memorias_relevantes = []
-    
-    for c in rows:
-        embe_old = json.loads(c[3])
-        score = cosine(embe, embe_old)
-        memorias_relevantes.append({
-            "memory": c[1],
-            "score": score
-        })
     con.close()
     
-    memorias_relevantes.sort(
-        key=lambda x: x["score"],
-        reverse=True
-    )
-    top_memorias = memorias_relevantes[:5]
-
-    memorias_contexto = "\n".join(
-        f"- {m['memory']}"
-        for m in top_memorias
-    )
-    return memorias_contexto
+    return "\n".join(row[0] for row in rows)
 
 
 def Get_memorys():
@@ -76,6 +57,7 @@ def Get_memorys():
         f"SELECT * from memorias ORDER BY id ASC"
     )
     rows = cursor.fetchall()
+    print(rows)
     system_content = "\n".join(
         row[1] for row in rows
     )
@@ -114,15 +96,13 @@ def Save_message(role, content):
     )
     con.commit()
 
-def Save_memory(memory, importance, memory_type, embedding):
-    import json
-    embedding_json = json.dumps(embedding)
+def Save_memory(memory, importance, entity):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute(
-        f"INSERT INTO memorias (memory, importance, memory_type, embedding) VALUES(?, ?, ?, ?)",
-        (memory, importance, memory_type, embedding_json)
+        f"INSERT INTO memorias (memory, importance, entity) VALUES(?, ?, ?)",
+        (memory, importance, entity)
     )
     con.commit()
     con.close()
@@ -140,23 +120,22 @@ def Get_memorys_ids():
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     cursor.execute(
-        f"SELECT id, memory, embedding from memorias ORDER BY id ASC"
+        f"SELECT id, memory from memorias ORDER BY id ASC"
     )
     rows = cursor.fetchall()
     return rows
 
-def Get_memorys_by_type(type):
+def Get_memorys_by_entity(entity):
+    print(entity)
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     cursor.execute(
-        f"SELECT id, memory, embedding, memory_type from memorias WHERE memory_type = '{type}' ORDER BY id ASC"
+        f"SELECT id, memory, entity, importance from memorias WHERE entity = '{entity}' ORDER BY id ASC"
     )
     rows = cursor.fetchall()
     return rows
 
-def Update_memory(mem_id, new_memory, memory_type, importance=None, embedding=None):
-    import json
-    embedding_json = json.dumps(embedding)
+def Update_memory(mem_id, new_memory, entity, importance):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
 
@@ -164,12 +143,11 @@ def Update_memory(mem_id, new_memory, memory_type, importance=None, embedding=No
         UPDATE memorias
         SET memory = ?,
             importance = COALESCE(?, importance),
-            memory_type = COALESCE(?, memory_type),
-            embedding = COALESCE(?, embedding)
+            entity = COALESCE(?, entity)
         WHERE id = ?
     """
 
-    cursor.execute(query, (new_memory, importance, memory_type, embedding_json, mem_id))
+    cursor.execute(query, (new_memory, importance, entity, mem_id))
 
 
     con.commit()

@@ -1,5 +1,26 @@
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário chorou com o final de Fullmetal Alchemist (ou Fullmetal).", "memory_type": "emotional", "importance": 5}, "TIME": "2026-05-30T16:37:58.245573"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário gosta muito de Blue Lock", "entity": "blue lock", "importance": 4}, "TIME": "2026-05-30T21:06:16.981831"}}
 {"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
 {"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"NEW_MEMORY": "O usuário chorou com o final de Fullmetal Alchemist (ou Fullmetal).", "Candidatos": "[{'id': 56, 'memory': 'O usuário chorou com o final de The Dark Crystal', 'score': np.float64(0.9706234184411769)}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_NEW", "data": {"new_memory": "O usuário chorou com o final de Fullmetal Alchemist (ou Fullmetal)."}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário considera Hana mais conversável e que evoluiu bastante", "entity": "hana", "importance": 7}, "TIME": "2026-05-30T21:10:11.888722"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário acredita que a conversa com Hana está levando a uma evolução rápida e expressa orgulho e fé no progresso", "entity": "hana", "importance": 5}, "TIME": "2026-05-30T21:13:22.547864"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 60, 'candidate': 'O usuário considera Hana mais conversável e que evoluiu bastante', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário considera Hana mais conversável e que evoluiu bastante, acredita que a conversa com Hana está levando a uma evolução rápida e expressa orgulho e fé no progresso'}}]"}}
+{"module": "HIPOCAMPO", "stage": "STATUS_REFRESH", "data": {"new_memory": "O usuário acredita que a conversa com Hana está levando a uma evolução rápida e expressa orgulho e fé no progresso", "Old_memory": "O usuário considera Hana mais conversável e que evoluiu bastante"}}
+FIM DA INTERAÇÃO
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário tem um gibi da turma da Monica jovem e afirma que é seu primeiro manga", "entity": "monica", "importance": 4}, "TIME": "2026-05-30T21:30:35.128686"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário comprou 6 caps de Record of Ragnarok e depois TODOS os caps de JAGAN", "entity": "record of ragnarok", "importance": 4}, "TIME": "2026-05-30T21:32:22.941712"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário tem orgulho de possuir todos os capítulos de Jagan", "entity": "jagan", "importance": 5}, "TIME": "2026-05-30T21:34:16.086698"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}

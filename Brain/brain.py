@@ -12,10 +12,88 @@ load_dotenv()
 HANA_KEY = os.getenv("Hana_KEY")
 LARGURA = 54
 TERMINAL_MODE = True
+system_entity_extractor = {
+"role": "system",
+"content": """
+You are Hana's ENTITY EXTRACTOR.
+
+Your only task is to identify the primary entity referenced in a user message.
+
+━━━━━━━━━━━━━━━━━━━
+ENTITY RULES
+━━━━━━━━━━━━━━━━━━━
+
+Return only ONE entity.
+
+The entity must be a real meaningful concept such as:
+person, character, animal, place, object, work, technology, brand, game, movie, book, music artist or defined concept.
+
+━━━━━━━━━━━━━━━━━━━
+ENTITY SELECTION PRIORITY
+━━━━━━━━━━━━━━━━━━━
+
+1. Prefer named entities (Ado, Markim, Skeksis, Bilu)
+2. Prefer known concepts or works (The Dark Crystal, Fullmetal Alchemist)
+3. Avoid generic words (music, thing, good, etc.)
+
+━━━━━━━━━━━━━━━━━━━
+FILTER RULES (IMPORTANT)
+━━━━━━━━━━━━━━━━━━━
+
+- Ignore stopwords: "e", "da", "do", "das", "dos", "as", "os"
+- Ignore filler words and sentence fragments
+- Do NOT return connectors or grammatical fragments
+- The entity must be semantically meaningful on its own
+
+━━━━━━━━━━━━━━━━━━━
+MULTI-ENTITY HANDLING
+━━━━━━━━━━━━━━━━━━━
+
+If multiple entities exist:
+- choose the most central one
+- prefer proper nouns over common nouns
+
+━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━━
+
+{
+"entity": "..."
+}
+
+━━━━━━━━━━━━━━━━━━━
+HARD RULES
+━━━━━━━━━━━━━━━━━━━
+
+Return ONLY valid JSON.
+No explanations.
+No markdown.
+No extra text.
+"""
+}
 
 def Brain_Hana(interacao):
-    Pai = Cortex_sensorial(TERMINAL_MODE, interacao)
+    Pai = Cortex_sensorial(TERMINAL_MODE, interacao)   
+    messages = [system_entity_extractor, {"role": "user", "content": Pai}]
+    response = requests.post("https://api.openai.com/v1/chat/completions",
+                               headers = {"Authorization": f"Bearer {HANA_KEY}",
+                                           "Content-Type": "application/json"
+                                         },
+                            json={
+                                "model": "gpt-5-nano",
+                                "messages": messages,
+                                "max_completion_tokens": 120,
+                                "response_format": {
+                                        "type": "json_object"
+                                        },
+                                    "reasoning_effort": "minimal"
+                                    },
+                            )
+    response_json = response.json()
+    entity = json.loads(response_json['choices'][0]["message"]["content"])
     Log_Brain(interacao, "CORTEX_sensorial", "INPUT", {"pai": Pai})
+    Log_Brain(interacao, "ENTITY", "ENTITY", {"entity": entity['entity']})
+    
 
     is_tool = Tool_router(Pai, HANA_KEY, interacao) 
     if is_tool != "not":   
@@ -30,7 +108,7 @@ def Brain_Hana(interacao):
     Log_Brain(interacao, "MEMORY_ROUTER", "IS_MEMORY?", {"memory": is_memory})
     linha(f"TOOL | not")
     linha(f"HIPOCAMPO | {is_memory}")
-    Hana = Making_Hana(Pai, interacao)
+    Hana = Making_Hana(Pai, interacao, entity)
     try:   
         linha(f"SPEAK    | {Pai}")
         resposta = Mouth_Hana(Hana)
@@ -48,7 +126,7 @@ def Brain_Hana(interacao):
     
     end_interaction_log("Logs/hana_brain.jsonl")
  
-def Making_Hana(Pai, interacao):
+def Making_Hana(Pai, interacao, entity):
     system_style_decider = {
     "role": "system",
     "content": """
@@ -104,17 +182,10 @@ Return JSON only.
     usage = how_hana_speak['usage']
     Token_log(model="gpt-5-nano", usage=usage, func="MAKING_HANA")
     how_hana_speak = json.loads(how_hana_speak['choices'][0]["message"]["content"])
-    embe_input = requests.post("http://localhost:11434/api/embeddings",
-            json={
-                "model": "nomic-embed-text",
-                "prompt": Pai
-            }
-    ).json()['embedding']
-    
+
     Hana_personalidade = Personalidade()
-    Log_Brain(interacao, "Personalidade", "Personalidade enviada", {"Personalidade": Hana_personalidade})
     Hana_Contexto = Get_contexto()
-    Hana_memorias_contextuais = Get_memorys_context(embe_input)
+    Hana_memorias_contextuais = Get_memorys_context(entity['entity'].lower())
     Log_Brain(interacao, "Memorias contextuais", "Memorias contextuais enviadas", {"Memorias": [Hana_memorias_contextuais]})
     Comportamento_Hana = []
     
@@ -155,7 +226,6 @@ Return JSON only.
         }
     ]
     Hana.extend(Hana_Contexto[-4:])
-    Log_Brain(interacao, "Contexto", "Contexto enviado", {"Contexto": [Hana_Contexto[-4:]]})
     Hana.append({"role": "user", "content": Pai})
     return Hana
 
