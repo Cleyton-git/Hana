@@ -14,7 +14,7 @@ def Get_terminal():
     print("╠" + "═" * LARGURA + "╣")
 
     for memoria in rows:
-        texto = f"[{memoria[0]}] {memoria[1]}, {memoria[2]}, {memoria[5]}"
+        texto = f"[{memoria[0]}] {memoria[1]}, {memoria[4]}"
 
         while len(texto) > LARGURA:
             print(f"║{texto[:LARGURA]}║")

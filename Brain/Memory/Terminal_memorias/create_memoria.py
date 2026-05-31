@@ -32,22 +32,11 @@ def caixa(titulo, conteudo):
 def Create_Terminal():
     memory = input_box("Digite a nova memória")
     importance = int(input_box("Digite a importancia dela"))
-
-    caixa("PROCESSANDO", "Gerando embedding da memória...")
-
-    embedding = requests.post(
-        "http://localhost:11434/api/embeddings",
-        json={
-            "model": "nomic-embed-text",
-            "prompt": memory
-        }
-    ).json()['embedding']
-
-    embedding_json = json.dumps(embedding)
+    entity = input_box("Digite a nova entidade")
 
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
-    cursor.execute("INSERT INTO memorias (memory, importance, embedding) VALUES(?, ?, ?)", (memory, importance, embedding_json))
+    cursor.execute("INSERT INTO memorias (memory, importance, entity) VALUES(?, ?, ?)", (memory, importance, entity))
     con.commit()
     con.close()
 
@@ -59,5 +48,8 @@ MEMORY:
 
 IMPORTANCE:
 {importance}
+
+ENTITY:
+{entity}
 """.strip())
     input("Digite enter...")

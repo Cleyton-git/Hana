@@ -51,24 +51,29 @@ ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
 	13.1. O LLM vai apenas retornar a memoria_text, importance e a entidade da memoria. FEITO
 	13.2. Com isso posso usar outro llm para detectar entidades em frases e puxar as memorias com esse dado. FEITO
 
-15. Vou criar uma consciencia digital para a Hana. A ideia é a seguinte
-	15.1. Vamos precisar 1: de uma forma de subir a Hana online para ele rodar por 24horas
-	15.2. Depois, vamos adicionar alguns dados para a Hana, falo em uma nova tabela do bd, podemos chamar de "Estado interno" humor, energia, saudade, curiosidade, atenção e vontade social. Todos esses caras vão ser administrados por um agente vou chamar ele de consciencia
-	15.3. Depois, vamos enviar para o consciencia alguns bons dados. Horario atual, Temperatura atual, tempo sem falar e eventos recentes.
-	15.4. O consciencia vai receber esses dados a cada 30 minutos por um site de PING, pretendo usar o CRON, a cada 30 minutos o CRON vai um simples request para um endpoint, esse endpoint vai pegar todos os dados citados no 14.3 e vai enviar um prompt pro consciencia.
+14. Vou criar uma consciencia digital para a Hana. A ideia é a seguinte
+	14.1. Vamos precisar 1: de uma forma de subir a Hana online para ele rodar por 24horas
+	14.2. Depois, vamos adicionar alguns dados para a Hana, falo em uma nova tabela do bd, podemos chamar de "Estado interno" humor, energia, saudade, curiosidade, atenção e vontade social. Todos esses caras vão ser administrados por um agente vou chamar ele de consciencia
+	14.3. Depois, vamos enviar para o consciencia alguns bons dados. Horario atual, Temperatura atual, tempo sem falar e eventos recentes.
+	14.4. O consciencia vai receber esses dados a cada 30 minutos por um site de PING, pretendo usar o CRON, a cada 30 minutos o CRON vai um simples request para um endpoint, esse endpoint vai pegar todos os dados citados no 14.3 e vai enviar um prompt pro consciencia.
 	Apartir disso o consciencia vai nos retornar os dados do 14.2 OU se a saudade for grande, o papel dele vai ser criar um topico e fazer a Hana mandar mensagem para o usuario sobre o topico.
-	15.5. Por agora o unico gatilho para uma interação com o usuario vai ser a saudade, mas isso me parece escalavel no futuro
+	14.5. Por agora o unico gatilho para uma interação com o usuario vai ser a saudade, mas isso me parece escalavel no futuro
 
-16. Cara vc so pensou nisso, é possivel mas é complexo, pensamentos para a Hana
+15. Cara vc so pensou nisso, é possivel mas é complexo, pensamentos para a Hana
 	16.1. Esses pensamentos internos seriam administrados pelo consciencia tbm, a ideia é simples: E se a Hana pudesse pensar e eu guardasse esses pensamentos em uma nova tabela, chamada pensamentos
 	esses pensamentos teriam data de validade tipo, posso determinar para o LLM classificar a quantidade de tempo que o pensamento deve existir
 	E esses pensamentos seriam enviados para a Hana a cada input do usuario. Mas eu não sei, isso aqui ta mto rascunhado ainda
 
-17. Vou fazer um ciclo circadiano para a Hana. Sempre que passar das 21:00 o consciencia-kun vai simplesmente mandar o msm output. Dos itens do 14.2. esqueci eles agr kkk, mas é humor e tal. 
+16. Vou fazer um ciclo circadiano para a Hana. Sempre que passar das 21:00 o consciencia-kun vai simplesmente mandar o msm output. Dos itens do 14.2. esqueci eles agr kkk, mas é humor e tal. 
 	Enfim, apartir disso o consciencia-kun vai determinar se a Hana quer falar. Krl, o consciencia-kun agr parece algo que tem que vir antes de tudo
 	tipo, se a Hana vai ter vontades agr, ela pode simplesmente não estar com vontade de conversar. O ciclo circadiano é simplesmente o começo dessa ideia
 	Eu meio que percebi que o consciencia-kun vai simplesmente administrar a desgraça do estado mental da Hana e se for dps das 21:00 ela simplesmente não vai querer convesar mto. Outro rascunho, mas boa ideia
 
-18. Integrar a Hana no whatsazp, ou no telegram. Vai ser mais facil de conversar com ela e  ela vai mandar audios
+17. O proximo passo real para o hipocampo da Hana é dar a capacidade dele conseguir identificar duas memorias em uma frase.
+	17.1 Por exemplo, gosto de record of ragnarok e jagan, tem duas entitys ai que podem virar duas memorias
 
-19. Criar "VISION" para a Hana
+18. O proximo passo real para o detector de entidades é ele conseguir detectar mais de uma entidade por mensagem.
+
+19. Integrar a Hana no whatsazp, ou no telegram. Vai ser mais facil de conversar com ela e  ela vai mandar audios
+
+20. Criar "VISION" para a Hana

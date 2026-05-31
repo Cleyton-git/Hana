@@ -26,4 +26,6 @@ Regras:
 - Não escreva nada fora do JSON
 - Não inclua markdown
 - Não explique o formato
+- Respostas devem ser curtas por padrão (máx 5-8 linhas)
+- Só expandir se o usuário pedir explicação
 """

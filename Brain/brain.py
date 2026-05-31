@@ -74,6 +74,16 @@ No extra text.
 
 def Brain_Hana(interacao):
     Pai = Cortex_sensorial(TERMINAL_MODE, interacao)   
+
+    is_tool = Tool_router(Pai, HANA_KEY, interacao) 
+    if is_tool != "not":   
+        linha(f"TOOL | {is_tool['tool']}")
+        print("╚" + "═" * (LARGURA + 2) + "╝")
+        Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": "yes"})
+        end_interaction_log("Logs/hana_brain.jsonl")
+        return
+    Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
+
     messages = [system_entity_extractor, {"role": "user", "content": Pai}]
     response = requests.post("https://api.openai.com/v1/chat/completions",
                                headers = {"Authorization": f"Bearer {HANA_KEY}",
@@ -89,20 +99,13 @@ def Brain_Hana(interacao):
                                     "reasoning_effort": "minimal"
                                     },
                             )
-    response_json = response.json()
-    entity = json.loads(response_json['choices'][0]["message"]["content"])
+    data = response.json()
+    usage = data['usage']
+    Token_log(model="gpt-5-nano", usage=usage, func="Entity_decisor")
+    entity = json.loads(data['choices'][0]["message"]["content"])
     Log_Brain(interacao, "CORTEX_sensorial", "INPUT", {"pai": Pai})
-    Log_Brain(interacao, "ENTITY", "ENTITY", {"entity": entity['entity']})
-    
+    Log_Brain(interacao, "ENTITY", "ENTITY_DETECTOR", {"entity": entity['entity']})
 
-    is_tool = Tool_router(Pai, HANA_KEY, interacao) 
-    if is_tool != "not":   
-        linha(f"TOOL | {is_tool['tool']}")
-        print("╚" + "═" * (LARGURA + 2) + "╝")
-        Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": "yes"})
-        end_interaction_log("Logs/hana_brain.jsonl")
-        return
-    Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
     
     is_memory = Memory_router(Pai, HANA_KEY)
     Log_Brain(interacao, "MEMORY_ROUTER", "IS_MEMORY?", {"memory": is_memory})
@@ -112,6 +115,7 @@ def Brain_Hana(interacao):
     try:   
         linha(f"SPEAK    | {Pai}")
         resposta = Mouth_Hana(Hana)
+        Log_Brain(interacao, 'RESPONSE_TUPLE', "TUPLE", {"Resposta": resposta})
         if resposta:
             linha(f"RESPONSE | {resposta[0]}")
             Log_Brain(interacao, 'response', "Resposta da Hana", {"Resposta": resposta[0]})
@@ -186,7 +190,6 @@ Return JSON only.
     Hana_personalidade = Personalidade()
     Hana_Contexto = Get_contexto()
     Hana_memorias_contextuais = Get_memorys_context(entity['entity'].lower())
-    Log_Brain(interacao, "Memorias contextuais", "Memorias contextuais enviadas", {"Memorias": [Hana_memorias_contextuais]})
     Comportamento_Hana = []
     
     if how_hana_speak["speech_mode"] == "minimal":
@@ -202,7 +205,9 @@ Return JSON only.
     else:
         Comportamento_Hana.append("\nFale de forma bem fria e distante.")
 
+    Log_Brain(interacao, "Memorias contextuais", "Memorias contextuais enviadas", {"Memorias": [Hana_memorias_contextuais]})
     Log_Brain(interacao, "Comportamento", "Comportamento enviado", {"Comportamento": [Comportamento_Hana]})
+    Log_Brain(interacao, "Contexto", "Contexto enviado", {"Contexto": [Hana_Contexto[-16:]]})
     
     Hana = [
         {
@@ -225,7 +230,7 @@ Return JSON only.
 {chr(10).join('- ' + c.strip() for c in Comportamento_Hana)}"""
         }
     ]
-    Hana.extend(Hana_Contexto[-4:])
+    Hana.extend(Hana_Contexto[-16:])
     Hana.append({"role": "user", "content": Pai})
     return Hana
 

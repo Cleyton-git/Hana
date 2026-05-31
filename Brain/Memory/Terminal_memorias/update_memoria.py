@@ -39,24 +39,16 @@ def Update_Terminal():
     caixa("MEMÓRIA SELECIONADA", memoria_antiga)
     new_memory = input_box("NOVA MEMÓRIA")
     new_importance = int(input_box("NOVA IMPORTÂNCIA"))
-    new_type = (input_box("NOVO TYPE [factual, emotional, contextual]"))
-    new_embeding = requests.post("http://localhost:11434/api/embeddings",
-            json={
-                "model": "nomic-embed-text",
-                "prompt": new_memory
-            }
-    ).json()['embedding']
-    embedding_json = json.dumps(new_embeding)
+    new_entity = input_box("NOVA ENTITY")
     
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     cursor.execute("""UPDATE memorias
                    SET memory = ?,
                         importance = COALESCE(?, importance),
-                        memory_type = COALESCE(?, memory_type),
-                        embedding = COALESCE(?, embedding)
+                        entity = COALESCE(?, entity)
                     WHERE ID = ?
-                   """, (new_memory, new_importance, new_type, embedding_json, id))
+                   """, (new_memory, new_importance, new_entity, id))
     con.commit()
     con.close()
     caixa(
@@ -70,6 +62,9 @@ NOVA MEMÓRIA:
 
 IMPORTÂNCIA:
 {new_importance}
+
+ENTITY:
+{new_entity}
 """.strip()
     )
     input("Clique enter...  ")
