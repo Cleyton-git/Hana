@@ -1,4 +1,4 @@
-from Brain.brain import Brain_Hana
+from Brain.brain import Brain_Hana_sync
 import traceback
 
 interacao = 1
@@ -8,7 +8,8 @@ def main():
 
 while True:
     try:
-        Brain_Hana(interacao)
+        #Brain_Hana_sync(interacao=interacao, channel="TERMINAL")
+        pass
     except KeyboardInterrupt:
         print("Hana encerrada. ")
         break

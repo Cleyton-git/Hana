@@ -1,4 +1,4 @@
-import requests, json, traceback, textwrap, os
+import requests, json, traceback, textwrap, os, asyncio
 from .Mouth.mouth import Mouth_Hana
 from .Personality.personality import Personalidade
 from .Memory.memory_system import Get_contexto, Save_message, Get_memorys_context
@@ -9,9 +9,7 @@ from .Cortex_Sensorial.contexsensorial import Cortex_sensorial
 from .Tecnico.hana_log import Token_log, Log_Brain, end_interaction_log
 
 load_dotenv()
-HANA_KEY = os.getenv("Hana_KEY")
 LARGURA = 54
-TERMINAL_MODE = True
 system_entity_extractor = {
 "role": "system",
 "content": """
@@ -72,16 +70,16 @@ No extra text.
 """
 }
 
-def Brain_Hana(interacao):
-    Pai = Cortex_sensorial(TERMINAL_MODE, interacao)   
+def Brain_Hana(interacao, web_text, HANA_KEY):
+    Pai = web_text
+    #Pai = Cortex_sensorial(interacao, channel, web_text)   
 
-    is_tool = Tool_router(Pai, HANA_KEY, interacao) 
+    Log_Brain(interacao, "BEGIN_NEW_INPUT", "INPUT", {"input": Pai})
+    is_tool = Tool_router(Pai, HANA_KEY, interacao)
     if is_tool != "not":   
-        linha(f"TOOL | {is_tool['tool']}")
-        print("╚" + "═" * (LARGURA + 2) + "╝")
         Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": "yes"})
         end_interaction_log("Logs/hana_brain.jsonl")
-        return
+        return "stop"
     Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
 
     messages = [system_entity_extractor, {"role": "user", "content": Pai}]
@@ -103,32 +101,12 @@ def Brain_Hana(interacao):
     usage = data['usage']
     Token_log(model="gpt-5-nano", usage=usage, func="Entity_decisor")
     entity = json.loads(data['choices'][0]["message"]["content"])
-    Log_Brain(interacao, "CORTEX_sensorial", "INPUT", {"pai": Pai})
     Log_Brain(interacao, "ENTITY", "ENTITY_DETECTOR", {"entity": entity['entity']})
-
     
     is_memory = Memory_router(Pai, HANA_KEY)
     Log_Brain(interacao, "MEMORY_ROUTER", "IS_MEMORY?", {"memory": is_memory})
-    linha(f"TOOL | not")
-    linha(f"HIPOCAMPO | {is_memory}")
     Hana = Making_Hana(Pai, interacao, entity)
-    try:   
-        linha(f"SPEAK    | {Pai}")
-        resposta = Mouth_Hana(Hana)
-        Log_Brain(interacao, 'RESPONSE_TUPLE', "TUPLE", {"Resposta": resposta})
-        if resposta:
-            linha(f"RESPONSE | {resposta[0]}")
-            Log_Brain(interacao, 'response', "Resposta da Hana", {"Resposta": resposta[0]})
-            Log_Brain(interacao, 'reasoning', "Razão da resposta", {"Resposta": resposta[1]})
-            # Eu gostaria de aqui chamar a func do log, apenas enviando a interação por parametro e o resto dos dados
-            Save_message(role="user", content=Pai) 
-            Save_message(role="assistant", content=resposta[0])
-    except Exception as e:
-        traceback.print_exc()
-        print("error log -> ", e)
-    print("╚" + "═" * (LARGURA + 2) + "╝")
-    
-    end_interaction_log("Logs/hana_brain.jsonl")
+    return Hana
  
 def Making_Hana(Pai, interacao, entity):
     system_style_decider = {

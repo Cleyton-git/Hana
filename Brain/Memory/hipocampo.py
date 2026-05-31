@@ -1,9 +1,10 @@
-import requests, json, textwrap
+import json, textwrap, asyncio
 from Brain.Memory.memory_system import Save_memory, Get_memorys_ids, Update_memory, Get_memorys_by_entity
 import numpy as np
 from ..Tecnico.hana_log import HIPOCAMPO_file_log, end_interaction_log
-from ..Mouth.mouth import Ia_duplicy_verification
+from ..Mouth.mouth import Ia_duplicy_verification, Criar_frase
 from datetime import datetime
+from playsound3 import playsound
 
 def Hipocampo(memoria):
     memoria['entity'] = memoria['entity'].lower()
@@ -22,7 +23,6 @@ def Hipocampo(memoria):
     else:
       pass
     end_interaction_log("Logs/Hipocampo.log")
-  
   
 def Cortex_Orbitofrontal(memoria):
   if not isinstance(memoria.get("importance"), int): # ve se a memoria vem com importance
@@ -54,6 +54,8 @@ def Memoria_associativa(new_memoria, old_memorias):
   if len(old_memorias) == 0:
     Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], entity=new_memoria['entity'])
     HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", { "status": "SAVED", "reasoning": "new memory detected"})
+    asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "new_memory.mp3"))
+    playsound("new_memory.mp3")
     return "new"
   decisions = []
   for id, memory, entity, importance in old_memorias:
@@ -195,6 +197,8 @@ def Memoria_associativa(new_memoria, old_memorias):
     if action == "refresh":
       HIPOCAMPO_file_log("STATUS_REFRESH", {"new_memory": new_memoria['memory_text'], "Old_memory": item['candidate']})
       Update_memory(mem_id=id, new_memory=new_memoria['memory_text'], entity=new_memoria['entity'], importance=new_memoria['importance'])
+      asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "refresh_memory.mp3"))
+      playsound("refresh_memory.mp3")
       return "refresh"
   
   for item in decisions:
@@ -204,6 +208,8 @@ def Memoria_associativa(new_memoria, old_memorias):
     if action == "replace":
       HIPOCAMPO_file_log("STATUS_REPLACE", {"new_memory": new_memoria['memory_text'], "Old_memory": item['candidate']})
       Update_memory(mem_id=id, new_memory=new_memoria['memory_text'], entity=new_memoria['entity'], importance=new_memoria['importance'])
+      asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "refresh_memory.mp3"))
+      playsound("refresh_memory.mp3")
       return "refresh"
   
   for item in decisions:
@@ -211,6 +217,8 @@ def Memoria_associativa(new_memoria, old_memorias):
     if action == "new":
       HIPOCAMPO_file_log("STATUS_NEW", {"new_memory": new_memoria['memory_text']})
       Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], entity=new_memoria['entity'])
+      asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "new_memory.mp3"))
+      playsound("new_memory.mp3")
       return "new"
   
   for item in decisions:

@@ -6,7 +6,7 @@ from ..Tecnico.hana_log import Token_log
 load_dotenv()
 HANA_KEY = os.getenv("Hana_KEY")
 
-async def Criar_frase(texto):
+async def Criar_frase(texto, path_save):
   communicate = edge_tts.Communicate(
         texto,
         voice="pt-BR-FranciscaNeural",
@@ -14,9 +14,9 @@ async def Criar_frase(texto):
         rate="+8%"
     )
 
-  await communicate.save("voz.mp3")
+  await communicate.save(path_save)
   
-def Mouth_Hana(msg):
+async def Mouth_Hana(msg):
   response = requests.post("https://api.openai.com/v1/chat/completions",
                         headers = {"Authorization": f"Bearer {HANA_KEY}",
                                     "Content-Type": "application/json"
@@ -35,8 +35,8 @@ def Mouth_Hana(msg):
   response = content['response']
   reasoning = content['reasoning']
   
-  asyncio.run(Criar_frase(response))
-  playsound("voz.mp3")
+  await Criar_frase(response, "Hana_voz.mp3")
+  playsound("Hana_voz.mp3")
   return response, reasoning
 
 

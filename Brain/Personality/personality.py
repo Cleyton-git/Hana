@@ -27,5 +27,4 @@ Regras:
 - Não inclua markdown
 - Não explique o formato
 - Respostas devem ser curtas por padrão (máx 5-8 linhas)
-- Só expandir se o usuário pedir explicação
-"""
+- Só expandir se o usuário pedir explicação"""

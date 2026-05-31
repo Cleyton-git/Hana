@@ -1,0 +1,22 @@
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário planeja usar o assistant em terminal/web e reconhece a impossibilidade atual, decidindo enviar mensagens apenas por requisição", "entity": "terminal/web", "importance": 4}, "TIME": "2026-05-31T11:33:00.003828"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário descreve uma lembrança emocional envolvendo a avó cheirando a morango.", "entity": "avó", "importance": 5}, "TIME": "2026-05-31T12:06:55.785682"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário tem uma RX 580 no seu PC", "entity": "rx 580", "importance": 4}, "TIME": "2026-05-31T12:09:14.310928"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário gosta de chocolate branco", "entity": "chocolate", "importance": 4}, "TIME": "2026-05-31T12:18:10.925119"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário prefere chocolate", "entity": "chocolate", "importance": 4}, "TIME": "2026-05-31T12:20:06.681060"}}
+{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
+{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 68, 'candidate': 'O usuário gosta de chocolate branco', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário gosta de chocolate branco e prefere chocolate'}}]"}}
+{"module": "HIPOCAMPO", "stage": "STATUS_REFRESH", "data": {"new_memory": "O usuário prefere chocolate", "Old_memory": "O usuário gosta de chocolate branco"}}
+FIM DA INTERAÇÃO

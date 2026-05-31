@@ -3,11 +3,13 @@ import requests, json, threading
 from ..Tecnico.hana_log import Token_log
 from .tools import Tool_Hana
 
-def Tool_router(Pai, HANA_KEY, interacao):
+def Tool_router(Pai, HANA_KEY, interacao=0):
     is_tool = Fast_Filter(Pai)
+    if is_tool == "not_llm":
+        return "not"
     options = ["tocar_musica", "pesquisar_youtube", "pesquisar_web", "abrir_projeto", 'abrir_terminal_memorias']
     if is_tool['tool']['action'] in options:
-        pass # LOGAR ESSE DADO AQUI, DPS OU NEM, SLA PORRA
+        pass
     else:
         system_tool_router = {
 "role": "system",
@@ -98,7 +100,6 @@ ONLY JSON.
     if is_tool.get('tool') is not None:
         threading.Thread(target=Tool_Hana,
                          args=(Pai, is_tool['tool']['action'], interacao)).start()
-        #Tool_Hana(Pai, is_tool['tool']['action'])
         return is_tool
     return "not"
 
@@ -107,9 +108,9 @@ def Fast_Filter(Pai):
     if len(Pai.split()) > 15:
         is_tool['tool']['action'] = None
         return is_tool
-    if "?" in Pai: ## isso aqui não faz sentido, o bagulho simplesmente fala "NÃO É UM TOOL É UMA PERGUNTA E ELE AINDA ENVIA PRO LLM? KKK"
-        is_tool['tool']['action'] = None
-        return is_tool
+    if "?" in Pai: 
+        return "not_llm"
+    
     texto = Pai.lower()
     LOCAL_ACTION_MAP = {
         "tocar_musica": ["toca a música", "toca a musica"],

@@ -12,29 +12,9 @@ def Tool_Hana(Pai, decision, interacao):
     if decision == "abrir_projeto":
         Abrir_projetos(Pai, interacao)
     if decision == "pesquisar_web":
-        try:
-            query = Pesquisar_web(Pai)   
-            asyncio.run(Criar_frase(f"Painho, pesquisei {query} pro senhor")) 
-            playsound("voz.mp3")
-            webbrowser.open(f"https://www.google.com/search?q={query}")
-            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisar_web", result="success")
-            Save_message(role="system", content=f"Hana abriu pesquisou {query} na web para o usuario") 
-        except Exception as e:
-            asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa não olha os logs painho kkk")) 
-            playsound("voz.mp3")
-            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisar_web", result=f"fail. Exception: {e}")
+        Pesquisar_web(Pai)
     if decision == "pesquisar_youtube":
-        try:
-            query = Pesquisar_yt(Pai)   
-            asyncio.run(Criar_frase(f"Painho, pesquisei {query} pro senhor")) 
-            playsound("voz.mp3")
-            webbrowser.open(f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}")
-            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisa_youtube", result="success")
-            Save_message(role="system", content=f"Hana pesquisou {query} no youtube para o usuario") 
-        except Exception as e:
-            asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa no youtube não olha os logs ai kkk")) 
-            playsound("voz.mp3")
-            Log_Tool(interacao=interacao, input_text=Pai, tool_name="pesquisa_youtube", result=f"fail. Exception {e}")
+        Pesquisar_yt(Pai)
     if decision == "abrir_video":
         tuple_returned = Abrir_videos(Pai)
         query = tuple_returned[0]
@@ -60,7 +40,6 @@ def Tool_Hana(Pai, decision, interacao):
         subprocess.Popen(comando, shell=True)
         Log_Tool(interacao=interacao, input_text=Pai, tool_name="abrir_terminal_memorias", result="success")
         
-    
 def Abrir_projetos(Pai, interacao):
     frase = Pai.lower().split()
     try:
@@ -182,9 +161,18 @@ REGRA FINAL
             "stream": False
         }
     )
-    
     query = json.loads(query.text)
-    return query['message']['content']
+    try:
+        asyncio.run(Criar_frase(f"Painho, pesquisei {query} pro senhor")) 
+        playsound("voz.mp3")
+        webbrowser.open(f"https://www.google.com/search?q={query}")
+        Log_Tool(interacao="web", input_text=Pai, tool_name="pesquisar_web", result="success")
+        Save_message(role="system", content=f"Hana abriu pesquisou {query} na web para o usuario") 
+    except Exception as e:
+        asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa não olha os logs painho kkk")) 
+        playsound("voz.mp3")
+        Log_Tool(interacao="web", input_text=Pai, tool_name="pesquisar_web", result=f"fail. Exception: {e}")
+    return
 
 def Pesquisar_yt(Pai):
     system_search_youtube = {
@@ -281,7 +269,18 @@ REGRA FINAL
     )
 
     query = json.loads(query.text)
-    return query['message']['content']
+    try:
+        query = Pesquisar_yt(Pai)   
+        asyncio.run(Criar_frase(f"Painho, pesquisei {query} pro senhor")) 
+        playsound("voz.mp3")
+        webbrowser.open(f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(query)}")
+        Log_Tool(interacao="web", input_text=Pai, tool_name="pesquisa_youtube", result="success")
+        Save_message(role="system", content=f"Hana pesquisou {query} no youtube para o usuario") 
+    except Exception as e:
+        asyncio.run(Criar_frase(f"Painho, Rana conseguiu pesquisa no youtube não olha os logs ai kkk")) 
+        playsound("voz.mp3")
+        Log_Tool(interacao="web", input_text=Pai, tool_name="pesquisa_youtube", result=f"fail. Exception {e}")
+    return
 
 def Abrir_videos(Pai):
     system_open_youtube = {
@@ -772,3 +771,4 @@ def TOOLS_log(title: str, lines: dict, width: int = 60):
         print_wrapped(k.upper(), v)
 
     print("╚" + "═" * width + "╝")
+    
