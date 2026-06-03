@@ -9,78 +9,71 @@ from .Cortex_Sensorial.contexsensorial import Cortex_sensorial
 from .Tecnico.hana_log import Token_log, Log_Brain, end_interaction_log
 
 load_dotenv()
-LARGURA = 54
 system_entity_extractor = {
 "role": "system",
 "content": """
 You are Hana's ENTITY EXTRACTOR.
 
-Your only task is to identify the primary entity referenced in a user message.
+Identify ALL meaningful entities in the user message.
 
-━━━━━━━━━━━━━━━━━━━
-ENTITY RULES
-━━━━━━━━━━━━━━━━━━━
+Entities can be:
+- people
+- characters
+- animals
+- places
+- brands
+- games
+- books
+- movies
+- music artists
+- series
+- technologies
+- concepts
 
-Return only ONE entity.
+Rules:
+- Ignore stopwords and filler words
+- Ignore grammatical fragments
+- Remove duplicates
+- Keep the order of importance
 
-The entity must be a real meaningful concept such as:
-person, character, animal, place, object, work, technology, brand, game, movie, book, music artist or defined concept.
+If an entity is uncertain, omit it.
 
-━━━━━━━━━━━━━━━━━━━
-ENTITY SELECTION PRIORITY
-━━━━━━━━━━━━━━━━━━━
+Do not generate placeholders such as:
+- unknown
+- hmm
+- hmm?
+- maybe
+- something
 
-1. Prefer named entities (Ado, Markim, Skeksis, Bilu)
-2. Prefer known concepts or works (The Dark Crystal, Fullmetal Alchemist)
-3. Avoid generic words (music, thing, good, etc.)
+When multiple known entities appear consecutively,
+return them separately.
 
-━━━━━━━━━━━━━━━━━━━
-FILTER RULES (IMPORTANT)
-━━━━━━━━━━━━━━━━━━━
-
-- Ignore stopwords: "e", "da", "do", "das", "dos", "as", "os"
-- Ignore filler words and sentence fragments
-- Do NOT return connectors or grammatical fragments
-- The entity must be semantically meaningful on its own
-
-━━━━━━━━━━━━━━━━━━━
-MULTI-ENTITY HANDLING
-━━━━━━━━━━━━━━━━━━━
-
-If multiple entities exist:
-- choose the most central one
-- prefer proper nouns over common nouns
-
-━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━━
+Output:
 
 {
-"entity": "..."
+  "entities": ["entity1", "entity2"]
 }
 
-━━━━━━━━━━━━━━━━━━━
-HARD RULES
-━━━━━━━━━━━━━━━━━━━
-
 Return ONLY valid JSON.
-No explanations.
-No markdown.
-No extra text.
 """
 }
 
-def Brain_Hana(interacao, web_text, HANA_KEY):
+def Brain_Hana(interacao, web_text, HANA_KEY, mode):
     Pai = web_text
-    #Pai = Cortex_sensorial(interacao, channel, web_text)   
 
+    is_tool = ""
     Log_Brain(interacao, "BEGIN_NEW_INPUT", "INPUT", {"input": Pai})
-    is_tool = Tool_router(Pai, HANA_KEY, interacao)
-    if is_tool != "not":   
-        Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": "yes"})
-        end_interaction_log("Logs/hana_brain.jsonl")
-        return "stop"
-    Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
+    if mode != "telegram":
+        is_tool = Tool_router(Pai, HANA_KEY, interacao)
+        if is_tool != "not":   
+            Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": "yes"})
+            end_interaction_log("Logs/hana_brain.jsonl")
+            return {
+            "prompt": 'dont have',
+            "memory": 'dont have',
+            "tool": 'yes'
+        }
+        Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
 
     messages = [system_entity_extractor, {"role": "user", "content": Pai}]
     response = requests.post("https://api.openai.com/v1/chat/completions",
@@ -101,14 +94,20 @@ def Brain_Hana(interacao, web_text, HANA_KEY):
     usage = data['usage']
     Token_log(model="gpt-5-nano", usage=usage, func="Entity_decisor")
     entity = json.loads(data['choices'][0]["message"]["content"])
-    Log_Brain(interacao, "ENTITY", "ENTITY_DETECTOR", {"entity": entity['entity']})
+    Log_Brain(interacao, "ENTITY", "ENTITY_DETECTOR", {"entity": entity['entities']})
     
-    is_memory = Memory_router(Pai, HANA_KEY)
+    is_memory = Memory_router(Pai, HANA_KEY, mode)
     Log_Brain(interacao, "MEMORY_ROUTER", "IS_MEMORY?", {"memory": is_memory})
-    Hana = Making_Hana(Pai, interacao, entity)
-    return Hana
+    
+    Hana = Making_Hana(Pai, interacao, entity, HANA_KEY)
+    
+    return {
+        "prompt": Hana,
+        "memory": is_memory,
+        "tool": is_tool
+    }
  
-def Making_Hana(Pai, interacao, entity):
+def Making_Hana(Pai, interacao, entity, HANA_KEY):
     system_style_decider = {
     "role": "system",
     "content": """
@@ -167,7 +166,7 @@ Return JSON only.
 
     Hana_personalidade = Personalidade()
     Hana_Contexto = Get_contexto()
-    Hana_memorias_contextuais = Get_memorys_context(entity['entity'].lower())
+    Hana_memorias_contextuais = Get_memorys_context(entity['entities'])
     Comportamento_Hana = []
     
     if how_hana_speak["speech_mode"] == "minimal":
@@ -211,13 +210,3 @@ Return JSON only.
     Hana.extend(Hana_Contexto[-16:])
     Hana.append({"role": "user", "content": Pai})
     return Hana
-
-def linha(texto):
-    linhas = textwrap.wrap(
-        str(texto),
-        width=LARGURA
-    )
-    for l in linhas:
-        print(f"║ {l:<{LARGURA}} ║")
-
-    

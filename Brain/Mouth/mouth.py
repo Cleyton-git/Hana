@@ -16,7 +16,7 @@ async def Criar_frase(texto, path_save):
 
   await communicate.save(path_save)
   
-async def Mouth_Hana(msg):
+async def Mouth_Hana(msg, terminal):
   response = requests.post("https://api.openai.com/v1/chat/completions",
                         headers = {"Authorization": f"Bearer {HANA_KEY}",
                                     "Content-Type": "application/json"
@@ -35,9 +35,12 @@ async def Mouth_Hana(msg):
   response = content['response']
   reasoning = content['reasoning']
   
-  await Criar_frase(response, "Hana_voz.mp3")
-  playsound("Hana_voz.mp3")
-  return response, reasoning
+  if terminal == "on":
+    await Criar_frase(response, "Hana_voz.mp3")
+    playsound("Hana_voz.mp3")
+    
+  return {"resposta": response, 
+          "razao": reasoning}
 
 
 def Ia_duplicy_verification(msg, model):

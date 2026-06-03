@@ -3,7 +3,7 @@ import requests, json, threading
 from ..Tecnico.hana_log import Token_log
 from .tools import Tool_Hana
 
-def Tool_router(Pai, HANA_KEY, interacao=0):
+def Tool_router(Pai, HANA_KEY, interacao):
     is_tool = Fast_Filter(Pai)
     if is_tool == "not_llm":
         return "not"

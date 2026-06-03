@@ -51,8 +51,14 @@ ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
 	13.1. O LLM vai apenas retornar a memoria_text, importance e a entidade da memoria. FEITO
 	13.2. Com isso posso usar outro llm para detectar entidades em frases e puxar as memorias com esse dado. FEITO
 
+14. Talvez eu não precise do extrator de entidades. Eu posso simplesmente dar um .split() na frase e rodar
+cada uma delas no banco, essa é uma ideia para amanhã
+
 14. Vou criar uma consciencia digital para a Hana. A ideia é a seguinte
-	14.1. Vamos precisar 1: de uma forma de subir a Hana online para ele rodar por 24horas
+	14.1. Vamos precisar 1: de uma forma de subir a Hana online para ele rodar por 24horas. A hana vai poder falar de 3 formas
+		14.1. Literalmente por terminal. request.post e tal. FEITO
+		14.2. Falar pelo TELEGRAM. FEITO. falta colocar o audio
+		14.3. Websocket, mas esse aqui eu prefiro deixar beeeem para dps
 	14.2. Depois, vamos adicionar alguns dados para a Hana, falo em uma nova tabela do bd, podemos chamar de "Estado interno" humor, energia, saudade, curiosidade, atenção e vontade social. Todos esses caras vão ser administrados por um agente vou chamar ele de consciencia
 	14.3. Depois, vamos enviar para o consciencia alguns bons dados. Horario atual, Temperatura atual, tempo sem falar e eventos recentes.
 	14.4. O consciencia vai receber esses dados a cada 30 minutos por um site de PING, pretendo usar o CRON, a cada 30 minutos o CRON vai um simples request para um endpoint, esse endpoint vai pegar todos os dados citados no 14.3 e vai enviar um prompt pro consciencia.
@@ -70,8 +76,11 @@ ou não, se é para ficar quieta se é para falar, isso é mto escalavel. FEITO
 	Eu meio que percebi que o consciencia-kun vai simplesmente administrar a desgraça do estado mental da Hana e se for dps das 21:00 ela simplesmente não vai querer convesar mto. Outro rascunho, mas boa ideia
 
 17. O proximo passo real para o hipocampo da Hana é dar a capacidade dele conseguir identificar duas memorias em uma frase.
-	17.1 Por exemplo, gosto de record of ragnarok e jagan, tem duas entitys ai que podem virar duas memorias
-
+	17.1. Por exemplo, gosto de record of ragnarok e jagan, tem duas entitys ai que podem virar duas memorias
+	17.2. Pensei em outra coisa, simlpesmente enviar o contexto para o hipocampo tambem, porém não o contexto
+	em si mas sim um resumo do contexot, envio o contexto para um outro llm que vai me retornar um resumo
+	dele e SE a memoria for TRUE a segunda parte do hipocampo usa esse contexto para criar memorias melhores
+ 
 18. O proximo passo real para o detector de entidades é ele conseguir detectar mais de uma entidade por mensagem.
 
 19. Integrar a Hana no whatsazp, ou no telegram. Vai ser mais facil de conversar com ela e  ela vai mandar audios

@@ -13,11 +13,22 @@ router = APIRouter()
 @router.post("/chat")
 async def Chat(data: UserMessage):
     user_input = data.message
-    Hana = Brain_Hana(interacao, user_input, HANA_KEY)
-    if Hana == "stop":
-        return
+    response = Brain_Hana(interacao, user_input, HANA_KEY)
+    Hana = response['prompt']
+    memory = response['memory']
+    tool = response['tool']
+    
+    if tool == "yes":
+        return {
+            "tool": "yes"
+        }
     else:
-        Hana_response = await Mouth_Hana(Hana)
+        Hana_response = await Mouth_Hana(msg=Hana, terminal="on")
         Log_Brain(interacao, 'RESPONSE_TUPLE', "TUPLE", {"Resposta": Hana_response})
         end_interaction_log("Logs/hana_brain.jsonl")
+        return {
+            "memory": memory,
+            "tool": tool,
+            "response": Hana_response['resposta']
+        }
     

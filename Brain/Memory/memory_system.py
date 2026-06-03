@@ -36,17 +36,21 @@ def Get_memorys_context(entity):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
-    #cursor.execute(
-    #    f"SELECT * from memorias WHERE category IN ('comportamento', 'identidade') ORDER BY id ASC"
-    #)
-    cursor.execute(
-        "SELECT memory FROM memorias WHERE entity = ? ORDER BY id ASC",
-        (entity,)
-    )
-    rows = cursor.fetchall()
+    lista_memorias = []
+    
+    for c in entity:
+        cursor.execute(
+            "SELECT memory FROM memorias WHERE entity = ? ORDER BY id ASC",
+            (c.lower(),)
+        )
+        rows = cursor.fetchall()
+        
+        for row in rows:
+            lista_memorias.append(row[0])
+            
     con.close()
     
-    return "\n".join(row[0] for row in rows)
+    return "\n".join(lista_memorias)
 
 
 def Get_memorys():

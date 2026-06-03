@@ -127,7 +127,7 @@ No extra text
 }
 LARGURA = 54
 
-def Memory_router(Pai, HANA_KEY):
+def Memory_router(Pai, HANA_KEY, mode):
     messages = [system_hipocampo, {"role": "user", "content": Pai}]
     memory = requests.post("https://api.openai.com/v1/chat/completions",
                                headers = {"Authorization": f"Bearer {HANA_KEY}",
@@ -152,7 +152,7 @@ def Memory_router(Pai, HANA_KEY):
     if memory['memory']:
         threading.Thread(
             target=Hipocampo,
-            args=(memory, )
+            args=(memory, mode)
         ).start()
         return "yes"
         # No futuro, vou adicionar o embeding nisso e comparar com os embedings do bd, se der um resultado mto baixo vale a tentativa mandar pro bd, se for mto alto descarta, se for algo em torno de 0.70/0.80 envia, pode ser refresh, porém isso é so no futuro
