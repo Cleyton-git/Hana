@@ -1,8 +1,6 @@
-.env
 .venv/
+.env
 .gitignore
-new_memory.mp3
-refresh_memory.mp3
-Hana_voz.mp3
-ideias.txt	
+audios/
+Hana_docs/
 LOGS/

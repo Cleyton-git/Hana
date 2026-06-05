@@ -16,16 +16,12 @@ def Hipocampo(memoria, mode):
     cortex_orbito_frontal_resp = Cortex_Orbitofrontal(memoria)
     HIPOCAMPO_file_log("CORTEX_ORBITO_FRONTAL", {"valid": cortex_orbito_frontal_resp})
     if cortex_orbito_frontal_resp == "ok":
-      reconsolidacao_resp = Reconsolidacao(memoria, mode)
-      if reconsolidacao_resp == "new":
-        Memoria_console("NEW", memoria['memory_text'])
+      response = Reconsolidacao(memoria)
+      if Reconsolidacao == "ignore":
+        HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", {"status": "UNSAVED", "reasoning": "memoria identica"})
         return
-      elif reconsolidacao_resp == "refresh":
-        Memoria_console("REFRESH", memoria['memory_text'])
-      elif reconsolidacao_resp == "ignore":
-        Memoria_console("IGNORE", memoria['memory_text'])
-    else:
-      pass
+      HIPOCAMPO_file_log("RECONSOLIDATION", {"status": "ok"})
+      Memoria_associativa(memoria, response['old_memorias'], mode)
     end_interaction_log("Logs/Hipocampo.log")
   
 def Cortex_Orbitofrontal(memoria):
@@ -37,30 +33,24 @@ def Cortex_Orbitofrontal(memoria):
     return "NOT"
   return "ok"
 
-def Reconsolidacao(memoria, mode):
+def Reconsolidacao(memoria):
   HIPOCAMPO_file_log("RECONSOLIDATION", { "status": "running"})
   memorias = [mem[1] for mem in Get_memorys_ids()]
   for c in memorias:
     if memoria['memory_text'] == c:
-      HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", {"status": "UNSAVED", "reasoning": "memoria identica"})
       return "ignore"
   old_memorias = Get_memorys_by_entity(memoria['entity'])
-  response = Memoria_associativa(memoria, old_memorias, mode)
-  if response == "new":
-    return "new"
-  elif response == "refresh":
-    return "refresh"
-  elif response == "ignore":
-    return "ignore"
-  return "ignore"
+  return {
+    'old_memorias': old_memorias,
+  }
 
 def Memoria_associativa(new_memoria, old_memorias, mode):
   if len(old_memorias) == 0:
     Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], entity=new_memoria['entity'])
-    HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", { "status": "SAVED", "reasoning": "new memory detected"})
+    HIPOCAMPO_file_log("MEMORIA_AFETIVA_END_PREMATURE", { "status": "SAVED", "reasoning": "new memory detected"})
     if mode == "terminal":
-      asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "new_memory.mp3"))
-      playsound("new_memory.mp3")
+      asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "audios/new_memory.mp3"))
+      playsound("audios/new_memory.mp3")
     elif mode == "telegram":
       requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
                      data = {
@@ -209,14 +199,15 @@ def Memoria_associativa(new_memoria, old_memorias, mode):
       HIPOCAMPO_file_log("STATUS_REFRESH", {"new_memory": new_memoria['memory_text'], "Old_memory": item['candidate']})
       Update_memory(mem_id=id, new_memory=new_memoria['memory_text'], entity=new_memoria['entity'], importance=new_memoria['importance'])
       if mode == "terminal":
-        asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "refresh_memory.mp3"))
-        playsound("refresh_memory.mp3")
+        asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "audios/refresh_memory.mp3"))
+        playsound("audios/refresh_memory.mp3")
       elif mode == "telegram":
         requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
                      data = {
                          "chat_id": "7866829741",
                          "text": f"Hana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text'].lower()}"
                      })
+      Memoria_console("REFRESH", new_memoria['memory_text'])
       return "refresh"
   
   for item in decisions:
@@ -227,14 +218,15 @@ def Memoria_associativa(new_memoria, old_memorias, mode):
       HIPOCAMPO_file_log("STATUS_REPLACE", {"new_memory": new_memoria['memory_text'], "Old_memory": item['candidate']})
       Update_memory(mem_id=id, new_memory=new_memoria['memory_text'], entity=new_memoria['entity'], importance=new_memoria['importance'])
       if mode == "terminal":
-        asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "refresh_memory.mp3"))
-        playsound("refresh_memory.mp3")
+        asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "audios/refresh_memory.mp3"))
+        playsound("audios/refresh_memory.mp3")
       elif mode == "telegram":
         requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
                      data = {
                          "chat_id": "7866829741",
                          "text": f"Hana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text'].lower()}"
                      })
+      Memoria_console("REPLACE", new_memoria['memory_text'])
       return "refresh"
   
   for item in decisions:
@@ -243,20 +235,22 @@ def Memoria_associativa(new_memoria, old_memorias, mode):
       HIPOCAMPO_file_log("STATUS_NEW", {"new_memory": new_memoria['memory_text']})
       Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], entity=new_memoria['entity'])
       if mode == "terminal":
-        asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "new_memory.mp3"))
-        playsound("new_memory.mp3")
+        asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "audios/new_memory.mp3"))
+        playsound("audios/new_memory.mp3")
       elif mode == "telegram":
         requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
                      data = {
                          "chat_id": "7866829741",
                          "text": f"Hana criou uma nova memoria {new_memoria['memory_text'].lower()}, entidade {new_memoria['entity']}"
                      })
+      Memoria_console("NEW", new_memoria['memory_text'])
       return "new"
   
   for item in decisions:
     action = item["decision"]["action"]
     if action == "duplicate":
       HIPOCAMPO_file_log("STATUS_DUPLICATE", {"new_memory": new_memoria['memory_text']})
+      Memoria_console("DUPLICATE", new_memoria['memory_text'])
       return "ignore"
     
     

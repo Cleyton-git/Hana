@@ -31,14 +31,14 @@ async def Telegram(request: Request):
                         })
             return {"ok": True}
         else:
-        Hana_response = await Mouth_Hana(msg=Hana, terminal="off")
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
-                     data = {
-                         "chat_id": id_chat,
-                         "text": Hana_response["resposta"]
-                     })
-        Log_Brain(interacao, 'RESPONSE_TUPLE', "TUPLE", {"Resposta": Hana_response})
-        end_interaction_log("Logs/hana_brain.jsonl")
+            Hana_response = await Mouth_Hana(msg=Hana, terminal="off")
+            requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
+                        data = {
+                            "chat_id": id_chat,
+                            "text": Hana_response["resposta"]
+                        })
+            Log_Brain(interacao, 'RESPONSE_TUPLE', "TUPLE", {"Resposta": Hana_response})
+            end_interaction_log("Logs/hana_brain.jsonl")
         return {"ok": True}
     except Exception as e:
         print(f"LOG -> ERRO: {e}")

@@ -36,8 +36,8 @@ async def Mouth_Hana(msg, terminal):
   reasoning = content['reasoning']
   
   if terminal == "on":
-    await Criar_frase(response, "Hana_voz.mp3")
-    playsound("Hana_voz.mp3")
+    await Criar_frase(response, "audios/Hana_voz.mp3")
+    playsound("audios/Hana_voz.mp3")
     
   return {"resposta": response, 
           "razao": reasoning}

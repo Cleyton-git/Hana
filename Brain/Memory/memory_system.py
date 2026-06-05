@@ -1,12 +1,12 @@
 import sqlite3
 import numpy as np
-import json
 
 def cosine(a, b):
     a = np.array(a)
     b = np.array(b)
 
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 
 def create_tables():
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
@@ -29,6 +29,15 @@ def create_tables():
             embedding float,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
         """)
+    
+    cursor.execute("""
+               CREATE TABLE IF NOT EXISTS estado_interno (
+                humor TEXT,
+                energia INTEGER,
+                saudade INTEGER,
+                curiosidade INTEGER,
+                vontade_social INTEGER
+                )""")
 
     con.commit()
 

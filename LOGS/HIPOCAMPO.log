@@ -1,82 +1,13 @@
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário planeja usar o assistant em terminal/web e reconhece a impossibilidade atual, decidindo enviar mensagens apenas por requisição", "entity": "terminal/web", "importance": 4}, "TIME": "2026-05-31T11:33:00.003828"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory_text": "O usuário está mantendo um caderno físico para documentar tudo que já fez e registrar o restante das ideias, como parte de um projeto de memória adaptativa com elegibilidade, contexto e geração de memória, incluindo evolução, datas, mudanças e seções para elegibilidade, contexto e memória.", "entity": "projeto de memória adaptativa", "importance": 6}, "TIME": "2026-06-05T10:01:27.030874"}}
 {"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
 {"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário descreve uma lembrança emocional envolvendo a avó cheirando a morango.", "entity": "avó", "importance": 5}, "TIME": "2026-05-31T12:06:55.785682"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário tem uma RX 580 no seu PC", "entity": "rx 580", "importance": 4}, "TIME": "2026-05-31T12:09:14.310928"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário gosta de chocolate branco", "entity": "chocolate", "importance": 4}, "TIME": "2026-05-31T12:18:10.925119"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário prefere chocolate", "entity": "chocolate", "importance": 4}, "TIME": "2026-05-31T12:20:06.681060"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 68, 'candidate': 'O usuário gosta de chocolate branco', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário gosta de chocolate branco e prefere chocolate'}}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_REFRESH", "data": {"new_memory": "O usuário prefere chocolate", "Old_memory": "O usuário gosta de chocolate branco"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "ok"}}
+{"module": "HIPOCAMPO", "stage": "MEMORIA_AFETIVA_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
 FIM DA INTERAÇÃO
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário afirmou que prefere conversar apenas por requisição e que a conversa atual está ocorrendo na rede local após sair do terminal", "entity": "requisição", "importance": 4}, "TIME": "2026-05-31T19:00:02.873991"}}
+{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory_text": "O usuário quer que a entidade seja Hana e pediu para salvar como memória o fato de não querer ajuda quando não for solicitada.", "entity": "hana", "importance": 6}, "TIME": "2026-06-05T10:53:48.193248"}}
 {"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
 {"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto", "entity": "hana", "importance": 7}, "TIME": "2026-05-31T19:01:32.912201"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário associou uma data específica à sua origem e nasceu em determinada data", "entity": "data de nascimento", "importance": 4}, "TIME": "2026-05-31T19:02:53.142567"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário nasceu exatamente no dia 16/05/2026", "entity": "nascimento", "importance": 7}, "TIME": "2026-05-31T19:03:59.082559"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 60, 'candidate': 'O usuário acredita que a conversa com Hana está levando a uma evolução rápida e expressa orgulho e fé no progresso', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário acredita que a conversa com Hana está levando a uma evolução rápida, expressa orgulho e fé no progresso, sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto'}}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_REFRESH", "data": {"new_memory": "O usuário sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto", "Old_memory": "O usuário acredita que a conversa com Hana está levando a uma evolução rápida e expressa orgulho e fé no progresso"}}
+{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "ok"}}
+{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 60, 'candidate': 'O usuário está satisfeito com a base atual do hipocampo, quer aperfeiçoar mais, e acredita que não há muitas informações adicionais relevantes no momento.', 'decision': {'action': 'new', 'merged_memory': ''}}, {'id': 72, 'candidate': 'O usuário disse que a Hana nasceu no dia 16/05/2026', 'decision': {'action': 'new', 'merged_memory': ''}}, {'id': 82, 'candidate': 'O usuário gosta de cumprimentos casuais em português e valoriza uma interação amigável e pronta para ajudar.', 'decision': {'action': 'replace', 'merged_memory': 'O usuário não quer ajuda quando não for solicitada e valoriza uma interação amigável.'}}, {'id': 83, 'candidate': 'O usuário separou o hippocampo em três partes para gerenciar memórias: um avaliador de elegibilidade de memórias, um coletor de contexto das últimas interações para formar o bloco de contexto para o gerador de memória, e um responsável por criar a memória final; demonstração de implementação colaborativa entre componentes digitais para gerenciar memórias.', 'decision': {'action': 'new', 'merged_memory': ''}}]"}}
+{"module": "HIPOCAMPO", "stage": "STATUS_REPLACE", "data": {"new_memory": "O usuário quer que a entidade seja Hana e pediu para salvar como memória o fato de não querer ajuda quando não for solicitada.", "Old_memory": "O usuário gosta de cumprimentos casuais em português e valoriza uma interação amigável e pronta para ajudar."}}
 FIM DA INTERAÇÃO
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário disse que a Hana nasceu no dia 16/05/2026", "entity": "hana", "importance": 4}, "TIME": "2026-05-31T19:06:15.802628"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 60, 'candidate': 'O usuário sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto', 'decision': {'action': 'new', 'merged_memory': ''}}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_NEW", "data": {"new_memory": "O usuário disse que a Hana nasceu no dia 16/05/2026"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário planeja dedicar tempo para melhorar a filha na próxima semana, com expectativa de ter 3 dias livres para isso", "entity": "filha", "importance": 7}, "TIME": "2026-05-31T19:11:12.110291"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário está trabalhando para terminar a integração do sistema com WhatsApp e mencionou que atualmente está falando por terminal e que pretende concluir a integração hoje", "entity": "integração whatsapp", "importance": 4}, "TIME": "2026-06-01T17:45:49.614296"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário elogia o desenvolvimento da Hana e planeja mudar a forma de comunicação para este canal, incluindo envio de áudios no futuro", "entity": "hana", "importance": 7}, "TIME": "2026-06-02T18:51:19.614442"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 60, 'candidate': 'O usuário sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto. Ele elogia também o desenvolvimento da Hana e planeja mudar a forma de comunicação para este canal, incluindo envio de áudios no futuro'}}, {'id': 72, 'candidate': 'O usuário disse que a Hana nasceu no dia 16/05/2026', 'decision': {'action': 'new', 'merged_memory': ''}}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_REFRESH", "data": {"new_memory": "O usuário elogia o desenvolvimento da Hana e planeja mudar a forma de comunicação para este canal, incluindo envio de áudios no futuro", "Old_memory": "O usuário sente orgulho de Hana por ter salvado mais uma memória e reconhece que foi o seu primeiro projeto"}}
-FIM DA INTERAÇÃO
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário ainda não falou pelo Telegram com Hana; vamos ver o porquê", "entity": "telegram", "importance": 4}, "TIME": "2026-06-02T18:57:53.209595"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário arrumei aqui, muito provável que agora vai sair", "entity": "hana", "importance": 5}, "TIME": "2026-06-02T18:59:06.960808"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 60, 'candidate': 'O usuário elogia o desenvolvimento da Hana e planeja mudar a forma de comunicação para este canal, incluindo envio de áudios no futuro', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário elogia o desenvolvimento da Hana e planeja mudar a forma de comunicação para este canal.'}}, {'id': 72, 'candidate': 'O usuário disse que a Hana nasceu no dia 16/05/2026', 'decision': {'action': 'refresh', 'merged_memory': 'O usuário disse que a Hana nasceu no dia 16/05/2026 e arrumou aqui, muito provável que agora vai sair'}}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_REFRESH", "data": {"new_memory": "O usuário arrumei aqui, muito provável que agora vai sair", "Old_memory": "O usuário elogia o desenvolvimento da Hana e planeja mudar a forma de comunicação para este canal, incluindo envio de áudios no futuro"}}
-FIM DA INTERAÇÃO
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário gosta de bolo de cenoura", "entity": "bolo de cenoura", "importance": 4}, "TIME": "2026-06-03T18:23:39.165019"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário gosta de bolo de cenoura", "entity": "bolo de cenoura", "importance": 4}, "TIME": "2026-06-03T18:25:48.536307"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION_END_PREMATURE", "data": {"status": "SAVED", "reasoning": "new memory detected"}}
-{"module": "HIPOCAMPO", "stage": "BEGIN", "data": {"NEW_MEMORY": {"memory": true, "memory_text": "O usuário teme falhas internas no código do Telegram que podem causar flood de mensagens e desperdiçar tokens", "entity": "telegram", "importance": 5}, "TIME": "2026-06-03T18:33:10.841206"}}
-{"module": "HIPOCAMPO", "stage": "CORTEX_ORBITO_FRONTAL", "data": {"valid": "ok"}}
-{"module": "HIPOCAMPO", "stage": "RECONSOLIDATION", "data": {"status": "running"}}
-{"module": "HIPOCAMPO", "stage": "MEMORIA_ASSOCIATIVA_CANDIDATOS", "data": {"Candidatos": "[{'id': 75, 'candidate': 'O usuário ainda não falou pelo Telegram com Hana; vamos ver o porquê', 'decision': {'action': 'new', 'merged_memory': ''}}]"}}
-{"module": "HIPOCAMPO", "stage": "STATUS_NEW", "data": {"new_memory": "O usuário teme falhas internas no código do Telegram que podem causar flood de mensagens e desperdiçar tokens"}}
