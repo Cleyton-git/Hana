@@ -1,6 +1,5 @@
 .venv/
 .env
-.gitignore
 audios/
 Hana_docs/
 LOGS/

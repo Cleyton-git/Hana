@@ -1,4 +1,4 @@
-import os
+import os, traceback
 from fastapi import APIRouter
 from Brain.brain import Brain_Hana, Log_Brain
 from Brain.Mouth.mouth import Mouth_Hana
@@ -17,13 +17,13 @@ async def Chat(data: UserMessage):
     try:
         response = Brain_Hana(interacao, user_input, HANA_KEY, "terminal")
     except Exception as e:
+        print(f"LOG -> {e}")
+        traceback.print_exc()
         return {
-            "memory": e,
             "tool": e,
             "response": e
         }
     Hana = response['prompt']
-    memory = response['memory']
     tool = response['tool']
     
     if tool == "yes":
@@ -31,13 +31,12 @@ async def Chat(data: UserMessage):
             "tool": "yes"
         }
     else:
-        Hana_response = await Mouth_Hana(msg=Hana, terminal="on")
+        Hana_response = await Mouth_Hana(messages=Hana, terminal="on")
         Log_Brain(interacao, 'RESPONSE_TUPLE', "TUPLE", {"Resposta": Hana_response})
         Save_message(role="user", content=f"[USER_MESSAGE] - {user_input}") 
         Save_message(role="user", content=f"[ASSISTANT_MESSAGE] - {Hana_response['resposta']}") 
         end_interaction_log("Logs/hana_brain.jsonl")
         return {
-            "memory": memory,
             "tool": tool,
             "response": Hana_response['resposta']
         }

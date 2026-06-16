@@ -30,8 +30,6 @@ while True:
         print("╚" + "═" * (LARGURA + 2) + "╝")
         continue
     
-    linha(f"TOOL | {response['tool']}")
-    linha(f"MEMORY | {response['memory']}")
     linha(f"RESPONSE | {response['response']}")
     print("╚" + "═" * (LARGURA + 2) + "╝")
     

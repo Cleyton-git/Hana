@@ -35,7 +35,7 @@ or
 
 RULES:
 
-music, artist, band, playlist, play, listen
+play, listen
 → tocar_musica
 open/watch specific video
 → abrir_video

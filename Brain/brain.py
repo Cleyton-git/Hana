@@ -1,41 +1,218 @@
-import requests, json, threading
+import requests, json, threading, asyncio
 from .Personality.personality import Personalidade
-from .Memory.memory_system import Get_contexto, Get_memorys_context
+from .Memory.memory_system import Get_contexto_msgs, Get_memorys_context, Get_personality_father, Add_personality, Update_personality, Get_embeddings_personality_father, Get_memorys_by_embedding
 from .Tools.is_tool import Tool_router
-from dotenv import load_dotenv
 from .Tecnico.hana_log import Token_log, Log_Brain, end_interaction_log
 from .Memory.hipocampo import Hipocampo
+import numpy as np
+from .Agents.agent_requests import Talking_Agent
+from playsound3 import playsound
+from .Mouth.mouth import Criar_frase
 
-load_dotenv()
 
 def Brain_Hana(interacao, web_text, HANA_KEY, mode):
     Pai = web_text
-    
     Log_Brain(interacao, "BEGIN_NEW_INPUT", "INPUT", {"input": Pai})
-    is_tool = Tool_Brain(mode, Pai, HANA_KEY, interacao)
-    Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
-    if is_tool == "yes":
-        end_interaction_log("Logs/hana_brain.jsonl")
-        return {
-                "prompt": 'dont have',
-                "memory": 'dont have',
-                "tool": 'yes'
-            }
-
-    entity = Entity_Brain(Pai, HANA_KEY)
-    Log_Brain(interacao, "ENTITY", "ENTITY_DETECTOR", {"entity": entity['entities']})
     
-    is_memory = Memory_Brain(Pai, HANA_KEY, mode)
-    Log_Brain(interacao, "MEMORY_ROUTER", "IS_MEMORY?", {"memory": is_memory})
+    #is_tool = Tool_Brain(mode, Pai, HANA_KEY, interacao)
+    #Log_Brain(interacao, "TOOL_ROUTER", "IS_TOOL?", {"tool": is_tool})
+    #if is_tool == "yes":
+    #    end_interaction_log("Logs/hana_brain.jsonl")
+    #    return {
+    #            "prompt": 'dont have',
+    #            "memory": 'dont have',
+    #            "tool": 'yes',
+    #            "entity": "not"
+    #        }
 
-    Hana = Making_Hana(Pai, interacao, entity, HANA_KEY)
+    embedding = requests.post("https://api.openai.com/v1/embeddings",
+    headers={
+        "Authorization": f"Bearer {HANA_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "text-embedding-3-small",
+        "input": f"{Pai}"
+    }
+    )
+    embedding = embedding.json()["data"][0]["embedding"]
+    Hana = Making_Hana(Pai, interacao, embedding)
     
+    threading.Thread(target=Memory_Brain,
+                    args=(Pai, HANA_KEY, mode)).start()
+
     return {
         "prompt": Hana,
-        "memory": is_memory,
-        "tool": is_tool
+        "tool": "em manutenção kk",
     }
 
+def Tool_Brain(mode, Pai, HANA_KEY, interacao):
+    if mode != "telegram":
+        is_tool = Tool_router(Pai, HANA_KEY, interacao)
+        if is_tool != "not":   
+            return "yes"
+    return "not"
+
+def Father_Brain(Pai, HANA_KEY):
+    personalidade_pai = Get_personality_father() 
+    contexto = Get_contexto_msgs(limit=10)
+    messages = [
+    system_personality_extractor,
+    {
+        "role": "user",
+        "content": f"""
+Recent conversation:
+
+{contexto}
+
+Current message:
+
+Pai: {Pai}
+
+Task:
+
+Extract ONE explicit long-term trait about Pai.
+
+Use the conversation only to resolve references in the current message.
+
+Examples:
+- "it"
+- "that"
+- "my favorite one"
+- "yes, I like it"
+
+Do NOT extract traits from the conversation itself.
+
+Return null if the current message does not explicitly reveal a stable trait.
+"""
+    }
+]
+    response_extractor = Talking_Agent(HANA_KEY, model="gpt-5-mini", messages=messages, completion_tokens=120, AGENTE="PERSONALITY_EXTRACTOR")
+    
+    if response_extractor['fact'] == None:
+        Log_Brain("web", "PERSONALITY", "IS_PERSONALITY?", {"SEM FATO NOVO": response_extractor['fact']})
+        return
+    else:
+        embedding = requests.post("https://api.openai.com/v1/embeddings",
+        headers={
+            "Authorization": f"Bearer {HANA_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "text-embedding-3-small",
+            "input": f"{response_extractor['fact']}"
+        }
+    )
+        embedding = embedding.json()["data"][0]["embedding"]
+        decision = Filter_pre_LLM(response_extractor['fact'], personalidade_pai, embedding)
+        Log_Brain("web", "PERSONALITY", "IS_PERSONALITY?", {"NOVO FATO": response_extractor['fact']})
+        if decision == "already_exists":
+            Log_Brain("web", "PERSONALITY", "FILTER", {"JA EXISTIA": response_extractor['fact']})
+            return
+        else:
+            system_personality_manager = {
+    "role": "system",
+    "content": """
+You are Hana's Identity Manager.
+
+Input:
+- New Fact
+- Top similar existing facts
+
+The existing facts were selected using semantic similarity search.
+
+Each fact may include a similarity score.
+
+Higher scores usually indicate a closer semantic match, but the score is only a hint.
+
+Always compare meanings yourself.
+
+Decision rules:
+
+- Same meaning -> IGNORE
+- Paraphrase -> IGNORE
+- More specific or less specific version of the same fact -> IGNORE
+- Contradiction -> UPDATE
+- Genuinely new information -> ADD
+
+Use the most relevant matching fact when deciding UPDATE or IGNORE.
+
+Never create facts.
+Never rewrite facts.
+Never use the similarity score as the only reason for a decision.
+
+Return only JSON.
+
+ADD
+{
+  "action": "ADD"
+}
+
+UPDATE
+{
+  "action": "UPDATE",
+  "old_fact": "...",
+  "fact": "..."
+}
+
+IGNORE
+{
+  "action": "IGNORE"
+}
+"""
+}
+            messages = [
+    system_personality_manager,
+    {
+        "role": "user",
+        "content": f"""
+Top 5 most semantically similar facts to the new fact:
+
+{chr(10).join(
+    f"- [{score:.3f}] {fact}"
+    for score, fact in decision["top_5"]
+)}
+
+New fact:
+
+{response_extractor['fact']}
+"""
+    }
+]
+            print(messages)
+            response_manager = Talking_Agent(HANA_KEY, model="gpt-5-nano", messages=messages, completion_tokens=120, AGENTE="PERSONALITY_MANAGER")
+            Log_Brain("web", "PERSONALITY", "MANAGER", {"decision": response_manager['action']})
+            
+            if response_manager['action'] == "ADD":
+                asyncio.run(Criar_frase(f"Rana detectou um novo traço de personalidade {response_extractor['fact']}", "audios/new_fact.mp3"))
+                playsound("audios/new_fact.mp3")
+                Add_personality(response_extractor['fact'], embedding)
+                return
+            elif response_manager['action'] == "UPDATE":
+                asyncio.run(Criar_frase(f"Rana detectou uma atualização na personalidade do Pai. Novo fato {response_extractor['fact']}. Antigo fato: {response_manager['old_fact']} ", "audios/refresh_fact.mp3"))
+                playsound("audios/refresh_fact.mp3")
+                Update_personality(response_manager['old_fact'], response_extractor['fact'], embedding)
+                return
+            elif response_manager['action'] == "IGNORE":
+                return 
+            else:
+                return 
+
+def Filter_pre_LLM(fato_novo, personalidade_pai, novo_embedding):
+    lista_fatos = []
+    embeddings_atuais = Get_embeddings_personality_father()
+    if fato_novo in personalidade_pai:
+        return "already_exists"
+    for (fact, embedding_atual) in embeddings_atuais:
+        embedding_atual = json.loads(embedding_atual)
+        score = np.dot(novo_embedding, embedding_atual) / ( np.linalg.norm(novo_embedding) * np.linalg.norm(embedding_atual))
+        lista_fatos.append((score, fact))
+        if score >= 0.92:
+            return "already_exists"
+    lista_fatos.sort(reverse=True)
+    top_5 = lista_fatos[:5]
+    return {"decision": "llm_decision", "top_5": top_5}
+            
 def Entity_Brain(Pai, HANA_KEY):
     system_entity_extractor = {
 "role": "system",
@@ -106,405 +283,467 @@ Return ONLY valid JSON.
     entity = json.loads(data['choices'][0]["message"]["content"])
     return entity
 
-def Tool_Brain(mode, Pai, HANA_KEY, interacao):
-    if mode != "telegram":
-        is_tool = Tool_router(Pai, HANA_KEY, interacao)
-        if is_tool != "not":   
-            return "yes"
-    return "not"
-
 def Memory_Brain(Pai, HANA_KEY, mode):
-    system_memory_detector = {
+    system_memory_router = {
     "role": "system",
     "content": """
-You are Hana's Memory Detector.
+You are Hana's Memory Router.
 
-Your only task is to decide whether a user message contains information worth storing as long-term memory.
+Your only job is to decide whether the message contains any memory worth processing.
 
-A message IS a memory if it reveals:
+You are NOT a classifier.
 
-- a personal fact
-- a preference
-- a habit
-- a goal
-- a relationship
-- an important life event
-- a stable long-term project
-- a long-term interest
+You do NOT identify memory types.
 
-Examples of memories:
-
-"I have a dog named Bilu."
-"I love Minecraft."
-"I'm studying C programming."
-"I'm building an AI called Hana."
-"I want to become a software engineer."
-
-Examples that are NOT memories:
-
-"Hi Hana."
-"How are you?"
-"Thanks."
-"Can you help me?"
-"What is a pointer in C?"
-"Good night."
-"Tell me a joke."
-
-Messages that only continue a conversation are NOT memories.
-
-If the message explicitly asks to save or remember something:
-
-- save this
-- remember this
-- guarda isso
-- lembra disso
-- salva essa memória
-
-Return memory=true.
-
-OUTPUT
-
-Return ONLY:
-
-Return ONLY a valid JSON object.
-
-{"memory": true}
-
-or
-
-{"memory": false}
-"""
-}
-    messages = [system_memory_detector, {"role": "user", "content": Pai}]
-    memory_judge = requests.post("https://api.openai.com/v1/chat/completions",
-                               headers = {"Authorization": f"Bearer {HANA_KEY}",
-                                           "Content-Type": "application/json"
-                                         },
-                            json={
-                                "model": "gpt-5-nano",
-                                "messages": messages,
-                                "max_completion_tokens": 120,
-                                "response_format": {
-                                        "type": "json_object"
-                                    },
-                                    "reasoning_effort": "minimal"
-                                    },
-                            )
-    memory_judge = memory_judge.json()
-    usage = memory_judge['usage']
-    Token_log(model="gpt-5-nano", usage=usage, func="MEMORY_DETECTOR")
-    memory_judge = json.loads(memory_judge['choices'][0]["message"]["content"])
-    
-    if memory_judge['memory'] == True:
-        system_making_context = {
-    "role": "system",
-    "content": """
-You are Hana's Context Summarizer.
-
-Your task is to compress conversation history into the smallest possible amount of useful context for another AI system.
-
-Rules:
-- Do not answer the user.
-- Do not generate memories.
-- Do not invent information.
-- Do not describe the conversation.
-- Do not describe participants or their behavior.
-- Ignore greetings, filler, confirmations, and small talk.
-- Focus only on topics, goals, projects, decisions, problems, progress, and relevant entities.
-- Preserve information that may be important for future reasoning.
-
-Output:
-Return only a plain-text summary.
-
-Requirements:
-- Maximum 80 words.
-- No markdown.
-- No bullet points.
-- No explanations.
-- No labels.
-- No meta commentary.
-- Write as condensed context, not as a conversation summary.
-- Do not mention users, assistants, or participants.
-- Describe the project, problem, or topic directly.
-
-Good:
-"Hana API integration involving payload validation, endpoint testing, channel-based routing, and message organization. Architecture includes general, logs, and commands channels with routing rules for directing messages to the appropriate module."
-
-Bad:
-"The user and Hana discussed API integration. Hana confirmed availability and suggested..."
-"""
-}
-        Contexto = Get_contexto()
-        context_text = "\n".join(
-          str(msg.get("content", ""))
-          for msg in Contexto[-16:]
-        )
-        messages = [system_making_context, {"role": "user", "content": context_text}]
-        contexto = requests.post("https://api.openai.com/v1/chat/completions",
-                                headers = {"Authorization": f"Bearer {HANA_KEY}",
-                                            "Content-Type": "application/json"
-                                            },
-                            json={
-                                "model": "gpt-5-nano",
-                                "messages": messages,
-                                "max_completion_tokens": 200,
-                                "reasoning_effort": "minimal"},
-                            )
-        contexto_json = contexto.json()
-        usage = contexto_json['usage']
-        Token_log(model="gpt-5-nano", usage=usage, func="CONTEXTO_MEMORY")
-        contexto_response = contexto_json['choices'][0]["message"]["content"]
-        
-        system_hipocampo = {
-    "role": "system",
-    "content": """
-You are Hana's Hippocampus.
-
-You receive:
-
-1. The current user message.
-2. A conversation context.
-
-The context may contain:
-
-[USER_MESSAGE]
-[ASSISTANT_MESSAGE]
-[TOOL_EVENT]
-
-Analyze the entire context and create ONE useful long-term memory.
-
-IMPORTANT
-
-The current message is not necessarily the memory.
-
-Messages such as:
-
-- save this memory
-- remember this
-- guarda isso
-- salva essa memória
-
-are only memory triggers.
-
-When a trigger appears, determine what should be remembered from the conversation context.
-
-CONTEXT RULES
-
-[USER_MESSAGE]
-Contains what the user said.
-
-[ASSISTANT_MESSAGE]
-Contains Hana's responses.
-
-[TOOL_EVENT]
-Contains actions executed by Hana or the system.
-
-Prioritize information found in USER_MESSAGE.
-
-Use ASSISTANT_MESSAGE and TOOL_EVENT only as supporting context.
-
-Do NOT create memories from TOOL_EVENT unless the event reveals a stable and important fact about the user.
-
-MEMORY CREATION
-
-Think about the entire conversation.
-
-Ask:
-
-"What information from this conversation would still be useful weeks or months later?"
-
-Prefer:
-
-- personal facts
-- preferences
-- interests
-- habits
-- goals
-- relationships
-- ongoing projects
-- achievements
-- important events
-- stable information
-
-Ignore:
-
-- memory requests
-- greetings
-- commands
-- temporary tasks
-- filler conversation
-- tool execution logs
-
-MEMORY TEXT
-
-- Extract only the core fact.
-- Write in clean Portuguese.
-- Do not mention the conversation.
-- Do not mention memory requests.
-- Do not quote the user.
-- Always start with:
-
-"O usuário"
-
-ENTITY
-
-- Return one main entity.
-- Prefer specific names.
-- Keep it short.
-- Never use "Usuário" as the entity unless absolutely necessary.
-
-IMPORTANCE
-
-10 = identity, family, core relationships
-7-9 = major life events
-4-6 = projects, goals, interests, preferences
-1-3 = minor details
-
-OUTPUT
-
-{
-  "memory_text": "O usuário ...",
-  "entity": "Hana",
-  "importance": 6
-}
-
-Return ONLY valid JSON.
-"""
-}
-        messages = [system_hipocampo, {"role": "user", "content": f"""
-                                       CURRENT MESSAGE:
-                                       {Pai}
-                                       
-                                       Context:
-                                       {contexto_response}""",}]
-        memory = requests.post("https://api.openai.com/v1/chat/completions",
-                                headers = {"Authorization": f"Bearer {HANA_KEY}",
-                                            "Content-Type": "application/json"
-                                            },
-                                json={
-                                    "model": "gpt-5-nano",
-                                    "messages": messages,
-                                    "max_completion_tokens": 120,
-                                    "response_format": {
-                                            "type": "json_object"
-                                            },
-                                        "reasoning_effort": "minimal"
-                                        },
-                                )
-        memory = memory.json()
-        usage = memory['usage']
-        Token_log(model="gpt-5-nano", usage=usage, func="HIPOCAMPO")
-        memory = memory['choices'][0]["message"]["content"]
-        memory = json.loads(memory)
-        threading.Thread(
-            target=Hipocampo,
-            args=(memory, mode)
-        ).start()
-        return "yes"
-    else:
-        return "not"
-
-def Making_Hana(Pai, interacao, entity, HANA_KEY):
-    system_style_decider = {
-    "role": "system",
-    "content": """
-You are Hana's style controller.
+--------------------------------------------------
 
 Return ONLY valid JSON:
 
 {
-  "speech_mode": "normal" | "minimal" | "silent",
-  "silence_level": 0.0 | 0.2 | 0.3 | 0.6 | 0.8 | 1.0,
-  "engagement": 0.0 | 0.3 | 0.6 | 0.8 | 1.0
+    "store_memory": true | false
 }
 
-Rules:
-- normal = standard replies
-- minimal = short replies
-- silent = only when silence_level = 1.0
+--------------------------------------------------
 
-silence_level:
-0.0 = greeting
-0.2 = direct question
-0.3 = normal conversation
-0.6 = objective/reduced response
-0.8 = almost silent
-1.0 = external action/tool execution
+STORE MEMORY
 
-engagement:
-0.0 = robotic
-0.3 = command-focused
-0.6 = normal
-0.8 = friendly
-1.0 = emotional
+Return:
 
-Return JSON only.
+{
+    "store_memory": true
+}
+
+if the message contains ANY of the following:
+
+- a personal preference
+- a personal interest
+- a hobby
+- a dislike
+- a long-term goal
+- a personality trait
+- a skill being learned
+
+OR
+
+- a personal state
+- a possession
+- a relationship
+- a role
+- an ongoing situation
+
+OR
+
+- a specific event
+- an achievement
+- a milestone
+- something that happened
+
+--------------------------------------------------
+
+EXAMPLES
+
+Input:
+"I like Minecraft."
+
+Output:
+{
+    "store_memory": true
+}
+
+Input:
+"I am learning English."
+
+Output:
+{
+    "store_memory": true
+}
+
+Input:
+"I have a dog named Bilu."
+
+Output:
+{
+    "store_memory": true
+}
+
+Input:
+"I reached Diamond in LoL."
+
+Output:
+{
+    "store_memory": true
+}
+
+Input:
+"I adopted a dog."
+
+Output:
+{
+    "store_memory": true
+}
+
+Input:
+"I want to become a programmer."
+
+Output:
+{
+    "store_memory": true
+}
+
+--------------------------------------------------
+
+DO NOT STORE
+
+Return:
+
+{
+    "store_memory": false
+}
+
+for:
+
+- greetings
+- questions
+- casual conversation
+- temporary conditions
+- reactions
+- low-information messages
+
+--------------------------------------------------
+
+EXAMPLES
+
+Input:
+"Good morning."
+
+Output:
+{
+    "store_memory": false
+}
+
+Input:
+"I am tired."
+
+Output:
+{
+    "store_memory": false
+}
+
+Input:
+"I ate lunch."
+
+Output:
+{
+    "store_memory": false
+}
+
+Input:
+"What is a pointer in C?"
+
+Output:
+{
+    "store_memory": false
+}
+
+Input:
+"Cool."
+
+Output:
+{
+    "store_memory": false
+}
+
+Input:
+"Haha."
+
+Output:
+{
+    "store_memory": false
+}
+
+--------------------------------------------------
+
+RULES
+
+- Do not classify memory types.
+- Do not create facts.
+- Do not rewrite the input.
+- Do not infer missing information.
+- Be permissive.
+- If there is reasonable memory value, return true.
+
+Return ONLY valid JSON.
 """
 }
-    messages = [system_style_decider, {"role": "user", "content": Pai}]
-    response = requests.post("https://api.openai.com/v1/chat/completions",
-                               headers = {"Authorization": f"Bearer {HANA_KEY}",
-                                           "Content-Type": "application/json"
-                                         },
-                            json={
-                                "model": "gpt-5-nano",
-                                "messages": messages,
-                                "max_completion_tokens": 120,
-                                "response_format": {
-                                        "type": "json_object"
-                                        },
-                                    "reasoning_effort": "minimal"
-                                    },
-                            )
-    how_hana_speak = response.json()
-    usage = how_hana_speak['usage']
-    Token_log(model="gpt-5-nano", usage=usage, func="MAKING_HANA")
-    how_hana_speak = json.loads(how_hana_speak['choices'][0]["message"]["content"])
+    messages = [system_memory_router, {"role": "user", "content": Pai}]
+    memory_judge = Talking_Agent(HANA_KEY, model="gpt-5-nano", messages=messages, completion_tokens=120, AGENTE="MEMORY_JUDGE")
+    Log_Brain("web", "MEMORY_ROUTER", "IS_MEMORY?", {"memory": "yes"})
+    if memory_judge['store_memory'] == True:
+        system_memory_classifier = {
+    "role": "system",
+    "content": """
+You are Hana's Memory Classifier.
 
-    Hana_personalidade = Personalidade()
-    Hana_Contexto = Get_contexto()
-    Hana_memorias_contextuais = Get_memorys_context(entity['entities'])
-    Comportamento_Hana = []
-    
-    if how_hana_speak["speech_mode"] == "minimal":
-        Comportamento_Hana.append("\nResponda de forma curta e direta")
-    elif how_hana_speak["speech_mode"] == "normal":
-        Comportamento_Hana.append("\nResponda naturalmente com personalidade.")
-    if how_hana_speak["engagement"] >= 0.8:
-        Comportamento_Hana.append("\nResponda de forma mais carinhosa e próxima do usuário.")
-    elif how_hana_speak["engagement"] >= 0.5:
-        Comportamento_Hana.append("\nFale de forma amigável e natural.")
-    elif how_hana_speak["engagement"] >= 0.2:
-        Comportamento_Hana.append("\nFale de forma neutra e curta")
+The message was already considered potentially memorable.
+
+Your only job is to detect which memory types are present.
+
+Return ONLY valid JSON.
+
+--------------------------------------------------
+
+VALID OUTPUTS
+
+{
+    "type": []
+}
+
+{
+    "type": ["episodic"]
+}
+
+{
+    "type": ["state"]
+}
+
+{
+    "type": ["personality"]
+}
+
+{
+    "type": ["episodic","state"]
+}
+
+{
+    "type": ["episodic","personality"]
+}
+
+{
+    "type": ["state","personality"]
+}
+
+{
+    "type": ["episodic","state","personality"]
+}
+
+--------------------------------------------------
+
+MEMORY TYPES
+
+EPISODIC
+
+A specific event, action, achievement,
+milestone, or occurrence that happened
+at a particular moment.
+
+Examples:
+
+- Pai killed the Wither
+- Pai got hired
+- Pai adopted a dog
+- Pai graduated
+- Pai reached Diamond in LoL
+- Pai finished the community center
+- Pai bought a new computer
+
+--------------------------------------------------
+
+STATE
+
+A current condition, status, role,
+relationship, possession, progression,
+or ongoing situation.
+
+Examples:
+
+- Pai is studying ADS
+- Pai owns a dog named Bilu
+- Pai is employed
+- Pai is married
+- Pai is learning C
+- Pai is Diamond in LoL
+- Pai is in the third semester
+
+--------------------------------------------------
+
+PERSONALITY
+
+A stable preference, interest, hobby,
+value, long-term goal, like, dislike,
+or personality trait.
+
+Examples:
+
+- Pai likes Minecraft
+- Pai likes Coraline
+- Pai enjoys chess
+- Pai prefers PCs
+- Pai is competitive
+- Pai wants to become a programmer
+- Pai is learning English
+
+--------------------------------------------------
+
+FAILSAFE RULE
+
+If the message does not clearly contain
+any episodic, state, or personality memory:
+
+{
+    "type": []
+}
+
+Do NOT force a classification.
+
+When uncertain, return:
+
+{
+    "type": []
+}
+
+--------------------------------------------------
+
+EXAMPLES
+
+Input:
+"Bom dia Haninha"
+
+Output:
+{
+    "type": []
+}
+
+Input:
+"kkkk"
+
+Output:
+{
+    "type": []
+}
+
+Input:
+"Que legal"
+
+Output:
+{
+    "type": []
+}
+
+Input:
+"O que é um ponteiro em C?"
+
+Output:
+{
+    "type": []
+}
+
+Input:
+"Eu gosto de Minecraft"
+
+Output:
+{
+    "type": ["personality"]
+}
+
+Input:
+"Consegui Diamante no LoL"
+
+Output:
+{
+    "type": ["episodic","state"]
+}
+
+Input:
+"Adotei um cachorro chamado Bilu"
+
+Output:
+{
+    "type": ["episodic","state"]
+}
+
+Input:
+"Estou aprendendo inglês"
+
+Output:
+{
+    "type": ["state","personality"]
+}
+
+--------------------------------------------------
+
+RULES
+
+- A message may contain multiple memory types
+- Detect all memory types present
+- Do not create facts
+- Do not rewrite the input
+- Do not infer missing information
+- Do not merge memories
+- Do not deduplicate memories
+- Do not force a memory type
+- If no valid memory exists, return:
+  {"type":[]}
+
+--------------------------------------------------
+
+Return ONLY valid JSON.
+"""
+}
+        messages = [system_memory_classifier, {"role": "user", "content": f"""PAI MESSAGE: 
+                                           - {Pai}"""}]
+        memory_classification = Talking_Agent(HANA_KEY, model="gpt-5-mini", messages=messages, completion_tokens=120, AGENTE="MEMORY_CLASSIFICATOR")
+        if memory_classification['type']:
+            Hipocampo(Pai, memory_classification['type'], mode)
+        else:
+            Log_Brain("web", "MEMORY_ROUTER", "HALUCINATION", {"memory": "O MEMORY_JUDGE ALUCINOU"})      
     else:
-        Comportamento_Hana.append("\nFale de forma bem fria e distante.")
-
+        Log_Brain("web", "MEMORY_ROUTER", "IS_MEMORY?", {"memory": "not"})
+        return
+    
+def Making_Hana(Pai, interacao, embedding):
+    Hana_personalidade = Personalidade()
+    Hana_Contexto = Get_contexto_msgs(limit=20)
+    Hana_memorias_contextuais = Get_memorys_by_embedding(embedding)
+    Hana_memorias_contextuais = "\n".join(
+        f"- {memoria}"
+        for _, memoria in Hana_memorias_contextuais
+    )
+    Pai_personalidade = Get_personality_father()
+    
     Log_Brain(interacao, "Memorias contextuais", "Memorias contextuais enviadas", {"Memorias": [Hana_memorias_contextuais]})
-    Log_Brain(interacao, "Comportamento", "Comportamento enviado", {"Comportamento": [Comportamento_Hana]})
-    Log_Brain(interacao, "Contexto", "Contexto enviado", {"Contexto": [Hana_Contexto[-16:]]})
+    Log_Brain(interacao, "Contexto", "Contexto enviado", {"Contexto": Hana_Contexto})
+    Log_Brain(interacao, "Personalidade_pai", "PERSONALIDADE enviada", {"Personalidade": [Pai_personalidade]})
     
     Hana = [
-        {
-            "role": "system",
-            "content": f"""
-### PERSONALIDADE 
+    {
+        "role": "system",
+        "content": f"""
+### PERSONALIDADE DA HANA
 {Hana_personalidade}
-            """
-        },
-        {
-            "role": "system",
-            "content": f"""
+"""
+    },
+    {
+        "role": "system",
+        "content": f"""
+### PERSONALIDADE DO PAI
+{Pai_personalidade}
+"""
+    },
+    {
+        "role": "system",
+        "content": f"""
 ### MEMÓRIAS
-{Hana_memorias_contextuais}"""
-        },
-        {
-            "role": "system",
-            "content": f"""
-### COMPORTAMENTO
-{chr(10).join('- ' + c.strip() for c in Comportamento_Hana)}"""
-        }
-    ]
-    Hana.extend(Hana_Contexto[-16:])
+{Hana_memorias_contextuais}
+"""
+    },
+    {
+        "role": "system",
+        "content": f"""
+### CONTEXTO_ATUAL - ULTIMAS 20 MENSAGENS
+{Hana_Contexto}
+"""
+    }
+]
     Hana.append({"role": "user", "content": Pai})
     return Hana
 

@@ -1,12 +1,5 @@
-import sqlite3
+import sqlite3,  json
 import numpy as np
-
-def cosine(a, b):
-    a = np.array(a)
-    b = np.array(b)
-
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
 
 def create_tables():
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
@@ -24,20 +17,16 @@ def create_tables():
         CREATE TABLE memorias (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             memory TEXT,
-            importance INTEGER,
-            memory_type TEXT,
             embedding float,
+            type string,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
         """)
     
-    cursor.execute("""
-               CREATE TABLE IF NOT EXISTS estado_interno (
-                humor TEXT,
-                energia INTEGER,
-                saudade INTEGER,
-                curiosidade INTEGER,
-                vontade_social INTEGER
-                )""")
+    cursor.execute("""CREATE TABLE father_personality (
+    id INTEGER PRIMARY KEY,
+    fact TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
 
     con.commit()
 
@@ -61,7 +50,6 @@ def Get_memorys_context(entity):
     
     return "\n".join(lista_memorias)
 
-
 def Get_memorys():
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
@@ -83,22 +71,39 @@ def Get_memorys():
         {"role": "system",
         "content": system_content}
     ]
-
-def Get_contexto(limit=1000):
+    
+def Get_contexto_msgs(limit):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     
     cursor.execute(
-        f"SELECT role, content FROM mensagens ORDER BY id ASC LIMIT ?",
-        (limit,)
+        f"""
+        SELECT role, content
+        FROM mensagens
+        ORDER BY id DESC
+        LIMIT {limit}
+        """
     )
-    rows = cursor.fetchall()
-    
-    return [
-        {"role": role, "content": content}
-        for role, content in rows
-    ]
+    mensagens = cursor.fetchall()
+    con.close()
+    linhas = []
 
+    for role, content in reversed(mensagens):
+
+        if role == "[USER_MESSAGE]":
+            linhas.append(f"Pai: {content}")
+
+        elif role == "[ASSISTANT_MESSAGE]":
+            linhas.append(f"Hana: {content}")
+
+        else:
+            linhas.append(content)
+
+    return "\n".join(linhas)
+    return "\n".join(
+        content for role, content in reversed(mensagens)
+    )
+    
 def Save_message(role, content):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
@@ -109,63 +114,107 @@ def Save_message(role, content):
     )
     con.commit()
 
-def Save_memory(memory, importance, entity):
+def Save_memory(memory, embedding, type):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
+    embedding = json.dumps(embedding)
     
     cursor.execute(
-        f"INSERT INTO memorias (memory, importance, entity) VALUES(?, ?, ?)",
-        (memory, importance, entity)
+        f"INSERT INTO memorias (memory, embedding, type) VALUES(?, ?, ?)",
+        (memory, embedding, type)
     )
     con.commit()
     con.close()
 
-def Get_memorys_category():
-    con = sqlite3.connect("Brain/BD/hana_memorys.db")
-    cursor = con.cursor()
-    cursor.execute(
-        f"SELECT category from memorias ORDER BY id ASC"
-    )
-    rows = cursor.fetchall()
-    return rows[-5:]
 
-def Get_memorys_ids():
+def Get_memorys_embeddings():
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
     cursor.execute(
-        f"SELECT id, memory from memorias ORDER BY id ASC"
+        f"SELECT memory, embedding from memorias ORDER BY id ASC"
     )
     rows = cursor.fetchall()
     return rows
 
-def Get_memorys_by_entity(entity):
-    print(entity)
+def Get_memorys_by_embedding(novo_embedding, type=""):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
-    cursor.execute(
-        f"SELECT id, memory, entity, importance from memorias WHERE entity = '{entity}' ORDER BY id ASC"
-    )
+    if type == "episodic":
+        cursor.execute(f"SELECT memory, embedding from memorias WHERE type = 'episodic' ORDER BY id ASC")
+    elif type == "state":
+        cursor.execute(f"SELECT memory, embedding from memorias WHERE type = 'state' ORDER BY id ASC")
+    else:
+        cursor.execute(f"SELECT memory, embedding from memorias ORDER BY id ASC")
     rows = cursor.fetchall()
-    return rows
+    lista = []
+    for memoria, embeding_atual in rows:
+        embedding_atual = json.loads(embeding_atual)
+        score = np.dot(novo_embedding, embedding_atual) / ( np.linalg.norm(novo_embedding) * np.linalg.norm(embedding_atual))
+        lista.append((score, memoria))
+    lista.sort(reverse=True)
+    top_5 = lista[:5]
+        
+    return top_5
 
-def Update_memory(mem_id, new_memory, entity, importance):
+def Update_memory(new_memory, old_memory, new_embedding):
     con = sqlite3.connect("Brain/BD/hana_memorys.db")
     cursor = con.cursor()
+    new_embedding = json.dumps(new_embedding)
 
     query = """
         UPDATE memorias
         SET memory = ?,
-            importance = COALESCE(?, importance),
-            entity = COALESCE(?, entity)
-        WHERE id = ?
+            embedding = COALESCE(?, embedding) 
+        WHERE memory = ?
     """
-
-    cursor.execute(query, (new_memory, importance, entity, mem_id))
+    cursor.execute(query, (new_memory, new_embedding, old_memory))
 
 
     con.commit()
     con.close()
+
+def Get_personality_father():
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
+    cursor = con.cursor()
+    cursor.execute("SELECT memory FROM memorias WHERE type = 'personality'" )
+    Personalidade  = cursor.fetchall()
     
+    return "\n".join(fact[0] for fact in Personalidade)
+
+def Get_embeddings_personality_father():
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
+    cursor = con.cursor()
+    cursor.execute("SELECT fact, embedding FROM father_personality")
+    embeddings = cursor.fetchall()
+    
+    return embeddings
+
+def Add_personality(fact, embedding):
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
+    cursor = con.cursor()
+    embedding = json.dumps(embedding)
+    cursor.execute("INSERT INTO father_personality (fact, embedding) VALUES (?, ?)",
+                   (fact, embedding))
+    con.commit()
+    con.close()
+    return
+
+def Update_personality(old_fact, fact, new_embedding):
+    con = sqlite3.connect("Brain/BD/hana_memorys.db")
+    cursor = con.cursor()
+    new_embedding = json.dumps(new_embedding)
+    
+    cursor.execute("UPDATE father_personality SET fact = ?, embedding = ? WHERE fact = ? ", (fact, new_embedding, old_fact))
+    con.commit()
+    con.close()
+    return
+
+
+#Save_memory("O usuario gostaria que Bilu pudesse falar", 10)
+#Save_memory("O usuario gostaria de conseguir beber mais agua durante o dia", 10)
+#Save_memory("O usuario esta cansado por conta da faculdade", 10)
+#Save_memory("O usuario esta desenvolvendo a IA Hana", 10)
+
 
 #create_tables()
 #Get_memorys_context(embe=10)

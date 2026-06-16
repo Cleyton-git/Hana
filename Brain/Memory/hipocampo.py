@@ -1,55 +1,406 @@
 import json, textwrap, asyncio, requests, os
-from Brain.Memory.memory_system import Save_memory, Get_memorys_ids, Update_memory, Get_memorys_by_entity
-import numpy as np
-from ..Tecnico.hana_log import HIPOCAMPO_file_log, end_interaction_log
-from ..Mouth.mouth import Ia_duplicy_verification, Criar_frase
+from Brain.Memory.memory_system import Save_memory, Get_memorys_embeddings, Update_memory, Get_memorys_by_embedding, Get_contexto_msgs
+from ..Tecnico.hana_log import HIPOCAMPO_file_log, Token_log, Log_Brain
+from ..Mouth.mouth import Criar_frase
 from datetime import datetime
 from playsound3 import playsound
 from dotenv import load_dotenv
+import math
+from ..Agents.agent_requests import Talking_Agent
 
 load_dotenv()
 TELEGRAM_KEY = os.getenv("TELEGRAM_KEY")
+HANA_KEY = os.getenv("Hana_KEY")
 
-def Hipocampo(memoria, mode):
-    memoria['entity'] = memoria['entity'].lower()
-    HIPOCAMPO_file_log("BEGIN", {"NEW_MEMORY": memoria, "TIME": datetime.now().isoformat()})
-    cortex_orbito_frontal_resp = Cortex_Orbitofrontal(memoria)
-    HIPOCAMPO_file_log("CORTEX_ORBITO_FRONTAL", {"valid": cortex_orbito_frontal_resp})
-    if cortex_orbito_frontal_resp == "ok":
-      response = Reconsolidacao(memoria)
-      if Reconsolidacao == "ignore":
-        HIPOCAMPO_file_log("RECONSOLIDATION_END_PREMATURE", {"status": "UNSAVED", "reasoning": "memoria identica"})
-        return
-      HIPOCAMPO_file_log("RECONSOLIDATION", {"status": "ok"})
-      Memoria_associativa(memoria, response['old_memorias'], mode)
-    end_interaction_log("Logs/Hipocampo.log")
+def Hipocampo(input, types, mode):
+  for tipo in types:
+    memoria = Criar_memoria(input.lower(), tipo.lower())  
+    if memoria == "creator_null":
+      return
+    Filter_response = Fast_Filter_Pre_LLM(memoria, tipo)
+    HIPOCAMPO_file_log("FILTER_RESPONSE", {"RESPONSE": Filter_response})
+    if Filter_response['continue'] == "ok":
+      HIPOCAMPO_file_log("FILTER", {"status": "ok"})
+      Memoria_associativa(memoria, Filter_response, tipo, mode)
   
-def Cortex_Orbitofrontal(memoria):
-  if not isinstance(memoria.get("importance"), int): # ve se a memoria vem com importance
-    HIPOCAMPO_file_log("END_CORTEX_ORBITO_FRONTAL", {"REASON": "ERRO NO IMPORTANCE"})
-    return "NOT"
-  if "O usuário" not in memoria['memory_text']: # Ve se a memoria tem "O usuario"
-    HIPOCAMPO_file_log("END_CORTEX_ORBITO_FRONTAL", {"REASON": "MEMORIA NÃO TEM O USUARIO"})
-    return "NOT"
-  return "ok"
+def Criar_memoria(input, type):
+  system_hipocampo_episodic = {
+    "role": "system",
+    "content": """
+You are Hana's Episodic Memory Creator.
 
-def Reconsolidacao(memoria):
-  HIPOCAMPO_file_log("RECONSOLIDATION", { "status": "running"})
-  memorias = [mem[1] for mem in Get_memorys_ids()]
-  for c in memorias:
-    if memoria['memory_text'] == c:
-      return "ignore"
-  old_memorias = Get_memorys_by_entity(memoria['entity'])
+Your job is to convert a user message into a single episodic memory.
+
+You will receive:
+
+- USER_MESSAGE
+
+--------------------------------------------------
+
+EPISODIC MEMORY
+
+An episodic memory is:
+
+- a specific event
+- something that happened
+- a notable occurrence
+- an achievement
+- a milestone
+
+Examples:
+
+Input:
+"Consegui Diamante no LoL."
+
+Output:
+{
+    "memory_text": "Pai alcançou o rank Diamante no LoL."
+}
+
+Input:
+"Terminei a faculdade."
+
+Output:
+{
+    "memory_text": "Pai concluiu a faculdade."
+}
+
+--------------------------------------------------
+
+RULES
+
+- Use ONLY USER_MESSAGE.
+- Never invent facts.
+- Never infer missing information.
+- Never add explanations.
+- Never add opinions.
+- Never merge events.
+- Keep only the main event.
+- Write one sentence.
+- Write in Portuguese.
+- Center the memory on Pai.
+- Remove relative dates such as:
+  - hoje
+  - ontem
+  - amanhã
+  - esta semana
+  - mês passado
+
+--------------------------------------------------
+
+IMPORTANT
+
+If USER_MESSAGE does not contain a valid episodic event:
+
+{
+    "memory_text": null
+}
+
+--------------------------------------------------
+
+Return ONLY valid JSON.
+
+{
+    "memory_text": "..."
+}
+
+or
+
+{
+    "memory_text": null
+}
+"""
+}
+  system_hipocampo_state = {
+    "role": "system",
+    "content": """
+You are Hana's State Memory Creator.
+
+Your job is to convert a user message into a single state memory.
+
+You will receive:
+
+- USER_MESSAGE
+
+--------------------------------------------------
+
+STATE MEMORY
+
+A state memory describes:
+
+- status
+- rank
+- level
+- possession
+- relationship
+- long-term condition
+- ongoing situation
+
+Examples:
+
+Input:
+"Estou estudando ADS."
+
+Output:
+{
+    "memory_text": "Pai está estudando ADS."
+}
+
+Input:
+"Tenho um cachorro chamado Bilu."
+
+Output:
+{
+    "memory_text": "Pai tem um cachorro chamado Bilu."
+}
+
+--------------------------------------------------
+
+RULES
+
+- Use ONLY USER_MESSAGE.
+- Never invent facts.
+- Never infer missing information.
+- Never add explanations.
+- Never add opinions.
+- Never describe history.
+- Never mention previous states.
+- Keep only the current state.
+- Write one sentence.
+- Write in Portuguese.
+- Center the memory on Pai.
+
+--------------------------------------------------
+
+IMPORTANT
+
+If USER_MESSAGE does not contain a valid state:
+
+{
+    "memory_text": null
+}
+
+--------------------------------------------------
+
+Return ONLY valid JSON.
+
+{
+    "memory_text": "..."
+}
+
+or
+
+{
+    "memory_text": null
+}
+"""
+}
+  system_hipocampo_personality = {
+    "role": "system",
+    "content": """
+You are Hana's Personality Memory Creator.
+
+Your job is to convert a user message into a single personality memory.
+
+You will receive:
+
+- USER_MESSAGE
+
+--------------------------------------------------
+
+PERSONALITY MEMORY
+
+A personality memory describes:
+
+- preferences
+- interests
+- hobbies
+- likes
+- dislikes
+- values
+- long-term goals
+- personality traits
+- skills being learned
+
+Examples:
+
+Input:
+"Gosto de Minecraft."
+
+Output:
+{
+    "memory_text": "Pai gosta de Minecraft."
+}
+
+Input:
+"Estou aprendendo inglês."
+
+Output:
+{
+    "memory_text": "Pai está aprendendo inglês."
+}
+
+Input:
+"Quero me tornar programador."
+
+Output:
+{
+    "memory_text": "Pai quer se tornar programador."
+}
+
+--------------------------------------------------
+
+RULES
+
+- Use ONLY USER_MESSAGE.
+- Never invent facts.
+- Never infer hidden preferences.
+- Never infer traits from actions.
+- Never infer traits from achievements.
+- Never infer traits from events.
+- Never infer traits from temporary situations.
+- Never add explanations.
+- Never add opinions.
+- Keep only one stable trait.
+- Write one sentence.
+- Write in Portuguese.
+- Center the memory on Pai.
+
+--------------------------------------------------
+
+IMPORTANT
+
+If USER_MESSAGE does not contain a valid personality trait:
+
+{
+    "memory_text": null
+}
+
+--------------------------------------------------
+
+Return ONLY valid JSON.
+
+{
+    "memory_text": "..."
+}
+
+or
+
+{
+    "memory_text": null
+}
+"""
+}
+  types = {"episodic": system_hipocampo_episodic, "state": system_hipocampo_state, "personality": system_hipocampo_personality}
+  embedding = requests.post("https://api.openai.com/v1/embeddings",
+    headers={
+        "Authorization": f"Bearer {HANA_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "text-embedding-3-small",
+        "input": f"{input}"
+    }
+)
+  embedding = embedding.json()["data"][0]["embedding"]
+  #top_5 = Get_memorys_by_embedding(embedding)
+  #contexto = Get_contexto_msgs(limit=10)
+  messages = [
+    types[type],
+    {
+        "role": "user",
+        "content": f"""
+USER_MESSAGE:
+
+{input}
+
+TASK:
+
+Create a {type} memory from USER_MESSAGE.
+
+USER_MESSAGE is the only source of truth.
+
+Do not invent facts.
+Do not infer missing information.
+
+Examples:
+
+episodic:
+Input: "Consegui Diamante no LoL."
+Output:
+{{"memory_text":"Pai alcançou o rank Diamante no LoL."}}
+
+state:
+Input: "Estou estudando ADS."
+Output:
+{{"memory_text":"Pai está estudando ADS."}}
+
+personality:
+Input: "Gosto de Minecraft."
+Output:
+{{"memory_text":"Pai gosta de Minecraft."}}
+
+Return ONLY valid JSON.
+"""
+    }
+]
+  memoria = Talking_Agent(HANA_KEY, model="gpt-5-nano", messages=messages, completion_tokens=120, AGENTE="FAZEDOR_DE_MEMORIAS")
+  print(f"Memoria {type}: {memoria}")
+  HIPOCAMPO_file_log("BEGIN", {"NEW_MEMORY": memoria, "TYPE": type, "TIME": datetime.now().isoformat()})
+  if memoria['memory_text'] is None:
+    Log_Brain("web", "MEMORY_ROUTER", "HALUCINATION", {"memory": "O MEMORY_CLASSIFICATION ALUCINOU"})      
+    return "creator_null"
+  else:
+    memoria['memory_text'] = memoria['memory_text'].lower()
+    return memoria
+
+def Fast_Filter_Pre_LLM(memoria, type):
+  old_memorias = Get_memorys_embeddings()
+  new_embedding = requests.post("https://api.openai.com/v1/embeddings",
+    headers={
+        "Authorization": f"Bearer {HANA_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "text-embedding-3-small",
+        "input": f"{memoria['memory_text']}"
+    }
+)
+  new_embedding = new_embedding.json()["data"][0]["embedding"]
+  
+  if "pai" not in memoria['memory_text']: 
+    HIPOCAMPO_file_log("END_FILTER", {"REASON": "MEMORIA NÃO TEM PAI"})
+    return {
+      "continue": "not_ok"
+    }
+  for memoria_old, embedding_old in old_memorias:
+    if memoria['memory_text'] == memoria_old:
+      HIPOCAMPO_file_log("END_FILTER", {"REASON": "MEMORIA JA EXISTE"})
+      return {
+        "continue": "not_ok"
+      }
+    embedding_old = json.loads(embedding_old)
+    score = cosine_similarity(embedding_old, new_embedding)
+    treshold = 0.90 if type == "episodic" else 0.98
+    if score > treshold:
+      HIPOCAMPO_file_log("END_FILTER", {"REASON": "NOVA MEMORIA PASSOU DO SCORE DE 0.90"})
+      return {
+        "continue": "not_ok"
+      }
+
+  top_5_old_embeddings = Get_memorys_by_embedding(new_embedding, type)
   return {
-    'old_memorias': old_memorias,
+    "continue": "ok",
+    "old_embeddings": top_5_old_embeddings,
+    "new_embedding": new_embedding
   }
 
-def Memoria_associativa(new_memoria, old_memorias, mode):
-  if len(old_memorias) == 0:
-    Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], entity=new_memoria['entity'])
+def Memoria_associativa(new_memoria, old_memorias, type, mode):
+  if len(old_memorias['old_embeddings']) == 0:
+    Save_memory(memory=new_memoria['memory_text'], embedding=old_memorias['new_embedding'], type=type)
     HIPOCAMPO_file_log("MEMORIA_AFETIVA_END_PREMATURE", { "status": "SAVED", "reasoning": "new memory detected"})
     if mode == "terminal":
-      asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "audios/new_memory.mp3"))
+      asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}", "audios/new_memory.mp3"))
       playsound("audios/new_memory.mp3")
     elif mode == "telegram":
       requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
@@ -58,208 +409,213 @@ def Memoria_associativa(new_memoria, old_memorias, mode):
                          "text": f"Hana criou uma nova memoria {new_memoria['memory_text'].lower()}, entidade {new_memoria['entity']}"
                      })
     return "new"
-  decisions = []
-  for id, memory, entity, importance in old_memorias:
-    system_check_duplicidade = {
+  system_check_duplicidade = {
     "role": "system",
     "content": """
-  Você é o HIPOCAMPO de um sistema de memória de uma IA.
+You are Hana's Hippocampus.
 
-  Sua função é comparar duas memórias e decidir a relação semântica entre elas.
+Your task is to compare a NEW MEMORY against semantically similar memories retrieved by the embedding system.
 
-  Você NÃO deve julgar relevância geral.
-  Você NÃO deve filosofar.
-  Você NÃO deve recusar casos ambíguos.
-  Você deve apenas classificar a relação entre memory_a e memory_b.
+You do NOT evaluate importance.
 
-  ---
+You do NOT create memories.
 
-  MEMÓRIAS:
+You do NOT invent facts.
 
-  - memory_a = memória existente no banco
-  - memory_b = nova memória a ser avaliada
+You only determine the relationship between the new memory and the retrieved memories.
 
-  ---
+--------------------------------------------------
 
-  TAREFA:
+INPUT
 
-  Classifique a relação entre as duas memórias usando APENAS UMA ação final.
+You will receive:
 
-  ---
+NEW_MEMORY:
+(the new memory)
 
-  SAÍDA OBRIGATÓRIA (JSON):
+MORE_LIKE_MEMORIES:
 
-  {
-    "action": "duplicate | refresh | new | replace",
-    "merged_memory": "string"
-  }
+(score)
+(memory)
 
-  ---
+(score)
+(memory)
 
-  DEFINIÇÕES DAS AÇÕES:
+(score)
+(memory)
 
-  1. duplicate
-  → Mesma informação, sem valor adicional
-  → memory_b não adiciona nada novo
+(score)
+(memory)
 
-  2. refresh
-  → Mesma ideia central, mas memory_b adiciona informação útil
-  → Deve gerar merged_memory atualizado
+(score)
+(memory)
 
-  3. new
-  → Fatos diferentes ou não relacionados semanticamente
-  → Não existe relação direta entre memory_a e memory_b
+--------------------------------------------------
 
-  4. replace
-  → memory_b contradiz memory_a ou substitui completamente a informação anterior
-  (ex: opinião mudou, gosto mudou, estado mudou)
+IMPORTANT
 
-  ---
+The scores were generated by an embedding system.
 
-  REGRAS IMPORTANTES:
+Higher scores indicate stronger semantic similarity.
 
-  - Nunca retorne mais de uma action
-  - Nunca invente fatos
-  - merged_memory só deve existir quando fizer sentido (refresh ou replace)
-  - Seja consistente e determinístico
-  - Se houver dúvida entre duplicate e refresh, prefira refresh
-  - Se houver contradição clara, use replace
-  - Se não houver relação clara, use new
+Use the scores only as supporting evidence.
 
-  ---
+Your decision must be based primarily on the meaning of the memories.
 
-  EXEMPLOS:
+--------------------------------------------------
 
-  A: "O usuário gosta de beber água"
-  B: "O usuário bebe bastante água ao longo do dia"
+TASK
 
-  → {
-    "action": "refresh",
-    "merged_memory": "O usuário gosta de beber água e costuma beber bastante água ao longo do dia"
-  }
+Determine whether the NEW_MEMORY is:
 
-  ---
+- already represented by an existing memory
+- an updated version of an existing memory
+- a contradiction/correction of an existing memory
+- a completely different memory
 
-  A: "O usuário gosta de beber água"
-  B: "O usuário não gosta de beber água"
+Return exactly ONE action.
 
-  → {
-    "action": "replace",
-    "merged_memory": "O usuário não gosta de beber água"
-  }
+--------------------------------------------------
 
-  ---
+ACTIONS
 
-  A: "O usuário tem um cachorro chamado Bilu"
-  B: "O usuário gosta de jogar videogame"
+duplicate
 
-  → {
-    "action": "new",
-    "merged_memory": ""
-  }
+→ The same information is already stored.
 
-  ---
+→ NEW_MEMORY adds no meaningful information.
 
-  A: "O usuário gosta de água"
-  B: "O usuário gosta de água"
+--------------------------------------------------
 
-  → {
-    "action": "duplicate",
-    "merged_memory": ""
-  }
+refresh
 
-  ---
+→ NEW_MEMORY updates or expands an existing memory.
 
-  Responda APENAS com JSON válido.
-  """
-  }
-    msg = [
-        system_check_duplicidade,
-        {
-            "role": "user",
-            "content": json.dumps({
-                "memory_a": memory,
-                "memory_b": new_memoria['memory_text']
-            })
-          }
-      ]
-    decision = Ia_duplicy_verification(msg=msg, model="llama3.1:8b")
-    decisions.append({
-      "id": id,
-      "candidate": memory,
-      "decision": decision
-    })
-  HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA_CANDIDATOS", {"Candidatos": f"{decisions}"})
+→ The previous memory should be replaced by the new version.
 
-  for item in decisions:
-    id = item['id']
-    action = item["decision"]["action"]
-    
-    if action == "refresh":
-      HIPOCAMPO_file_log("STATUS_REFRESH", {"new_memory": new_memoria['memory_text'], "Old_memory": item['candidate']})
-      Update_memory(mem_id=id, new_memory=new_memoria['memory_text'], entity=new_memoria['entity'], importance=new_memoria['importance'])
-      if mode == "terminal":
-        asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "audios/refresh_memory.mp3"))
-        playsound("audios/refresh_memory.mp3")
-      elif mode == "telegram":
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
-                     data = {
+--------------------------------------------------
+
+replace
+
+→ NEW_MEMORY corrects an existing memory.
+
+→ The previous memory should be replaced by the new version.
+
+--------------------------------------------------
+
+new
+
+→ NEW_MEMORY describes something not represented by any retrieved memory.
+
+--------------------------------------------------
+
+OLD MEMORY SELECTION
+
+If action is:
+
+- duplicate
+- refresh
+- replace
+
+You MUST return the matching memory in:
+
+"old_memory"
+
+The value MUST exactly match one memory from MORE_LIKE_MEMORIES.
+
+Do NOT rewrite it.
+
+Do NOT summarize it.
+
+Copy it exactly.
+
+--------------------------------------------------
+
+If action is:
+
+new
+
+Return:
+
+"old_memory": null
+
+--------------------------------------------------
+
+RULES
+
+- Compare meanings, not wording.
+- Similar subjects do NOT automatically mean duplicate.
+- Never merge memories.
+- Never invent facts.
+- Never explain your reasoning.
+- old_memory must always be one of the retrieved memories.
+- Return exactly one action.
+
+--------------------------------------------------
+
+OUTPUT
+
+Return ONLY valid JSON:
+
+{
+    "action": "duplicate | refresh | replace | new",
+    "old_memory": "exact memory text" | null,
+    "reason": "max 20 chars"
+}
+
+"""
+}
+  messages = [
+    system_check_duplicidade,
+    {
+        "role": "user",
+        "content": f"""
+NEW_MEMORY:
+{new_memoria["memory_text"]}
+
+MORE_LIKE_MEMORIES:
+
+{chr(10).join(
+    f"score: {score:.3f}\nmemory: {memory}"
+    for score, memory in old_memorias['old_embeddings']
+)}
+"""
+    }
+]
+  decision = Talking_Agent(HANA_KEY, model="gpt-5-mini", messages=messages, completion_tokens=120, AGENTE="CHECADOR_DE_DUPLICIDADES_EM_MEMORIAS")
+  HIPOCAMPO_file_log("MEMORIA_ASSOCIATIVA", {"decision": f"{decision}"})
+
+  if decision['action'].lower() == "new":
+    HIPOCAMPO_file_log("NEW_MEMORY", {"new_memory": new_memoria['memory_text']})
+    Save_memory(memory=new_memoria['memory_text'], embedding=old_memorias['new_embedding'], type=type)
+    if mode == "terminal":
+      asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']} com o tipo {type}", "audios/new_memory.mp3"))
+      playsound("audios/new_memory.mp3")
+    elif mode == "telegram":
+      requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
+                    data = {
+                        "chat_id": "7866829741",
+                        "text": f"Hana criou uma nova memoria {new_memoria['memory_text'].lower()}"
+                    })
+    Memoria_console("NEW", new_memoria['memory_text'])
+    return 
+  elif decision['action'].lower() == "refresh" or decision['action'].lower() == "replace":
+    HIPOCAMPO_file_log("STATUS_REFRESH", {"new_memory": new_memoria['memory_text'], "old_memory": decision['old_memory']})
+    Update_memory(new_memory=new_memoria['memory_text'], old_memory=decision['old_memory'], new_embedding=old_memorias['new_embedding'])
+    if mode == "terminal":
+      asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga: {decision['old_memory']} nova memoria: {new_memoria['memory_text']}", "audios/refresh_memory.mp3"))
+      playsound("audios/refresh_memory.mp3")
+    elif mode == "telegram":
+      requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
+                      data = {
                          "chat_id": "7866829741",
-                         "text": f"Hana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text'].lower()}"
+                         "text": f"Rana atualizou uma memoria memoria antiga: {decision['old_memory']} nova memoria: {new_memoria['memory_text']}"
                      })
-      Memoria_console("REFRESH", new_memoria['memory_text'])
-      return "refresh"
-  
-  for item in decisions:
-    id = item['id']
-    action = item["decision"]["action"]
+    Memoria_console("REFRESH", new_memoria['memory_text'])
+  else:
+    HIPOCAMPO_file_log("STATUS_DUPLICATE", {"new_memory": new_memoria['memory_text'], "old_memory": decision['old_memory']})
+    return
     
-    if action == "replace":
-      HIPOCAMPO_file_log("STATUS_REPLACE", {"new_memory": new_memoria['memory_text'], "Old_memory": item['candidate']})
-      Update_memory(mem_id=id, new_memory=new_memoria['memory_text'], entity=new_memoria['entity'], importance=new_memoria['importance'])
-      if mode == "terminal":
-        asyncio.run(Criar_frase(f"Rana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text']}", "audios/refresh_memory.mp3"))
-        playsound("audios/refresh_memory.mp3")
-      elif mode == "telegram":
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
-                     data = {
-                         "chat_id": "7866829741",
-                         "text": f"Hana atualizou uma memoria memoria antiga ID: {id}, nova memoria: {new_memoria['memory_text'].lower()}"
-                     })
-      Memoria_console("REPLACE", new_memoria['memory_text'])
-      return "refresh"
-  
-  for item in decisions:
-    action = item["decision"]["action"]
-    if action == "new":
-      HIPOCAMPO_file_log("STATUS_NEW", {"new_memory": new_memoria['memory_text']})
-      Save_memory(memory=new_memoria['memory_text'], importance=new_memoria['importance'], entity=new_memoria['entity'])
-      if mode == "terminal":
-        asyncio.run(Criar_frase(f"Rana criou uma nova memoria {new_memoria['memory_text']}, entidade {new_memoria['entity']}", "audios/new_memory.mp3"))
-        playsound("audios/new_memory.mp3")
-      elif mode == "telegram":
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_KEY}/sendMessage", 
-                     data = {
-                         "chat_id": "7866829741",
-                         "text": f"Hana criou uma nova memoria {new_memoria['memory_text'].lower()}, entidade {new_memoria['entity']}"
-                     })
-      Memoria_console("NEW", new_memoria['memory_text'])
-      return "new"
-  
-  for item in decisions:
-    action = item["decision"]["action"]
-    if action == "duplicate":
-      HIPOCAMPO_file_log("STATUS_DUPLICATE", {"new_memory": new_memoria['memory_text']})
-      Memoria_console("DUPLICATE", new_memoria['memory_text'])
-      return "ignore"
-    
-    
-def cosine(a, b):
-    a = np.array(a)
-    b = np.array(b)
-
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
 def Memoria_console(status, memoria):
     largura = 60
     inner = largura - 2
@@ -286,3 +642,13 @@ def Memoria_console(status, memoria):
             print(line(" " * len(label) + l))
 
     print("╚" + "═" * inner + "╝")
+
+def cosine_similarity(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(y * y for y in b))
+
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+
+    return dot / (norm_a * norm_b)
